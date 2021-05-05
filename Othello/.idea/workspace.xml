@@ -1,0 +1,302 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ChangeListManager">
+    <list default="true" id="d1203ecd-2eed-4637-a34a-51c6dc56b9d2" name="Default Changelist" comment="" />
+    <ignored path="$PROJECT_DIR$/out/" />
+    <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="FileEditorManager">
+    <leaf>
+      <file pinned="false" current-in-tab="true">
+        <entry file="file://$PROJECT_DIR$/src/Othello.java">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="263">
+              <caret line="174" column="53" selection-start-line="174" selection-start-column="53" selection-end-line="174" selection-end-column="53" />
+              <folding>
+                <element signature="imports" expanded="true" />
+                <element signature="method#Othello#0;class#Othello#0" />
+                <element signature="method#main#0;class#Othello#0" />
+                <element signature="method#run#0;class#Othello#0" />
+                <element signature="e#755#1778#1" />
+                <element signature="e#384#411#1" />
+                <element signature="e#1591#1636#1" />
+                <element signature="e#495#529#1" />
+                <element signature="method#printBoard#0;class#Othello#0" />
+                <element signature="e#1290#1852#1" />
+                <element signature="e#1334#1800#1" />
+                <element signature="e#1387#1782#0" />
+                <element signature="method#flipTiles#0;class#Othello#0" />
+                <element signature="method#botMoveStart#0;class#Othello#0" />
+                <element signature="e#1525#1708#0" />
+                <element signature="method#playerMove#0;class#Othello#0" />
+                <element signature="e#3263#3321#1" />
+                <element signature="method#setOver#0;class#Othello#0" />
+                <element signature="e#1731#1832#1" />
+                <element signature="e#1771#1818#1" />
+                <element signature="method#botMove#0;class#Othello#0" />
+                <element signature="e#3530#3645#1" />
+                <element signature="e#3603#3639#1" />
+                <element signature="n#!!block;n#getLastMove#0;n#Othello#0" />
+                <element signature="method#constructBoard#0;class#Othello#0" />
+                <element signature="e#208#272#1" />
+                <element signature="e#301#338#1" />
+                <element signature="method#makeMove#0;class#Othello#0" />
+                <element signature="e#7087#7249#1" />
+                <element signature="method#isValidMove#0;class#Othello#0" />
+                <element signature="e#798#826#1" />
+                <element signature="method#otherColor#0;class#Othello#0" />
+                <element signature="method#checkTile#0;class#Othello#0" />
+                <element signature="method#setScore#0;class#Othello#0" />
+                <element signature="e#631#783#1" />
+                <element signature="e#671#773#1" />
+                <element signature="e#719#770#0" />
+                <element signature="n#!!block;n#getScore#0;n#Othello#0" />
+                <element signature="class#Tile#0;class#Othello#0" />
+                <element signature="method#Tile#0;class#Tile#0;class#Othello#0" />
+                <element signature="n#!!block;n#setColor#0;n#Tile#0;n#Othello#0" />
+                <element signature="n#!!block;n#getColor#0;n#Tile#0;n#Othello#0" />
+                <element signature="n#!!block;n#getX#0;n#Tile#0;n#Othello#0" />
+                <element signature="n#!!block;n#getY#0;n#Tile#0;n#Othello#0" />
+              </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+    </leaf>
+  </component>
+  <component name="FileTemplateManagerImpl">
+    <option name="RECENT_TEMPLATES">
+      <list>
+        <option value="Class" />
+      </list>
+    </option>
+  </component>
+  <component name="FindInProjectRecents">
+    <findStrings>
+      <find>null</find>
+      <find>turncounter++</find>
+      <find>lastmove</find>
+      <find>board</find>
+    </findStrings>
+  </component>
+  <component name="IdeDocumentHistory">
+    <option name="CHANGED_PATHS">
+      <list>
+        <option value="$PROJECT_DIR$/src/Othello.java" />
+      </list>
+    </option>
+  </component>
+  <component name="ProjectFrameBounds" extendedState="6">
+    <option name="x" value="130" />
+    <option name="y" value="55" />
+    <option name="width" value="1750" />
+    <option name="height" value="1030" />
+  </component>
+  <component name="ProjectView">
+    <navigator proportions="" version="1">
+      <foldersAlwaysOnTop value="true" />
+    </navigator>
+    <panes>
+      <pane id="Scope" />
+      <pane id="ProjectPane">
+        <subPane>
+          <expand>
+            <path>
+              <item name="Othello" type="b2602c69:ProjectViewProjectNode" />
+              <item name="Othello" type="462c0819:PsiDirectoryNode" />
+            </path>
+          </expand>
+          <select />
+        </subPane>
+      </pane>
+      <pane id="PackagesPane" />
+    </panes>
+  </component>
+  <component name="PropertiesComponent">
+    <property name="com.android.tools.idea.instantapp.provision.ProvisionBeforeRunTaskProvider.myTimeStamp" value="1584149673904" />
+    <property name="restartRequiresConfirmation" value="false" />
+  </component>
+  <component name="RunDashboard">
+    <option name="ruleStates">
+      <list>
+        <RuleState>
+          <option name="name" value="ConfigurationTypeDashboardGroupingRule" />
+        </RuleState>
+        <RuleState>
+          <option name="name" value="StatusDashboardGroupingRule" />
+        </RuleState>
+      </list>
+    </option>
+  </component>
+  <component name="RunManager">
+    <configuration name="Othello" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
+      <option name="MAIN_CLASS_NAME" value="Othello" />
+      <module name="Othello" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <configuration default="true" type="ClojureREPL" factoryName="Local" activateToolWindowBeforeRun="false">
+      <setting name="replType" value="NREPL" />
+      <setting name="execution" value="LEININGEN" />
+      <module name="" />
+      <setting name="jvmArgs" value="" />
+      <setting name="parameters" value="" />
+      <setting name="workingDir" value="" />
+      <setting name="profiles" value="" />
+      <setting name="aliases" value="" />
+      <setting name="fixLineNumbers" value="false" />
+      <method v="2" />
+    </configuration>
+    <configuration default="true" type="ClojureREPL" factoryName="Remote" activateToolWindowBeforeRun="false">
+      <setting name="host" value="" />
+      <setting name="port" value="0" />
+      <setting name="replType" value="SOCKET" />
+      <setting name="configType" value="SPECIFY" />
+      <setting name="fixLineNumbers" value="false" />
+      <module name="" />
+      <method v="2" />
+    </configuration>
+    <recent_temporary>
+      <list>
+        <item itemvalue="Application.Othello" />
+      </list>
+    </recent_temporary>
+  </component>
+  <component name="SvnConfiguration">
+    <configuration />
+  </component>
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="d1203ecd-2eed-4637-a34a-51c6dc56b9d2" name="Default Changelist" comment="" />
+      <created>1584111829678</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1584111829678</updated>
+    </task>
+    <servers />
+  </component>
+  <component name="ToolWindowManager">
+    <frame x="-7" y="-7" width="1550" height="838" extended-state="6" />
+    <editor active="true" />
+    <layout>
+      <window_info id="Designer" />
+      <window_info id="Image Layers" />
+      <window_info id="UI Designer" />
+      <window_info id="Favorites" side_tool="true" />
+      <window_info id="Capture Tool" />
+      <window_info content_ui="combo" id="Project" order="0" visible="true" weight="0.07516778" />
+      <window_info id="Structure" order="1" side_tool="true" weight="0.25" />
+      <window_info anchor="bottom" id="Terminal" />
+      <window_info anchor="bottom" id="Event Log" side_tool="true" />
+      <window_info anchor="bottom" id="Statistic" />
+      <window_info anchor="bottom" id="Version Control" />
+      <window_info anchor="bottom" id="Messages" weight="0.3286119" />
+      <window_info anchor="bottom" id="Message" order="0" />
+      <window_info anchor="bottom" id="Find" order="1" />
+      <window_info active="true" anchor="bottom" id="Run" order="2" visible="true" weight="0.36685553" />
+      <window_info anchor="bottom" id="Debug" order="3" weight="0.4" />
+      <window_info anchor="bottom" id="Cvs" order="4" weight="0.25" />
+      <window_info anchor="bottom" id="Inspection" order="5" weight="0.4" />
+      <window_info anchor="bottom" id="TODO" order="6" />
+      <window_info anchor="right" id="Maven" />
+      <window_info anchor="right" id="Palette" />
+      <window_info anchor="right" id="Capture Analysis" />
+      <window_info anchor="right" id="CodeMR" />
+      <window_info anchor="right" id="CodeMR Metrics" />
+      <window_info anchor="right" id="Palette&#9;" />
+      <window_info anchor="right" id="Theme Preview" />
+      <window_info anchor="right" id="REPL" side_tool="true" />
+      <window_info anchor="right" id="Commander" internal_type="SLIDING" order="0" type="SLIDING" weight="0.4" />
+      <window_info anchor="right" id="Ant Build" order="1" weight="0.25" />
+      <window_info anchor="right" content_ui="combo" id="Hierarchy" order="2" weight="0.25" />
+    </layout>
+  </component>
+  <component name="XDebuggerManager">
+    <breakpoint-manager>
+      <breakpoints>
+        <line-breakpoint enabled="true" type="java-line">
+          <url>file://$PROJECT_DIR$/src/Othello.java</url>
+          <line>164</line>
+          <properties />
+          <option name="timeStamp" value="1" />
+        </line-breakpoint>
+      </breakpoints>
+    </breakpoint-manager>
+  </component>
+  <component name="editorHistoryManager">
+    <entry file="file://$PROJECT_DIR$/src/Othello.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="263">
+          <caret line="174" column="53" selection-start-line="174" selection-start-column="53" selection-end-line="174" selection-end-column="53" />
+          <folding>
+            <element signature="imports" expanded="true" />
+            <element signature="method#Othello#0;class#Othello#0" />
+            <element signature="method#main#0;class#Othello#0" />
+            <element signature="method#run#0;class#Othello#0" />
+            <element signature="e#755#1778#1" />
+            <element signature="e#384#411#1" />
+            <element signature="e#1591#1636#1" />
+            <element signature="e#495#529#1" />
+            <element signature="method#printBoard#0;class#Othello#0" />
+            <element signature="e#1290#1852#1" />
+            <element signature="e#1334#1800#1" />
+            <element signature="e#1387#1782#0" />
+            <element signature="method#flipTiles#0;class#Othello#0" />
+            <element signature="method#botMoveStart#0;class#Othello#0" />
+            <element signature="e#1525#1708#0" />
+            <element signature="method#playerMove#0;class#Othello#0" />
+            <element signature="e#3263#3321#1" />
+            <element signature="method#setOver#0;class#Othello#0" />
+            <element signature="e#1731#1832#1" />
+            <element signature="e#1771#1818#1" />
+            <element signature="method#botMove#0;class#Othello#0" />
+            <element signature="e#3530#3645#1" />
+            <element signature="e#3603#3639#1" />
+            <element signature="n#!!block;n#getLastMove#0;n#Othello#0" />
+            <element signature="method#constructBoard#0;class#Othello#0" />
+            <element signature="e#208#272#1" />
+            <element signature="e#301#338#1" />
+            <element signature="method#makeMove#0;class#Othello#0" />
+            <element signature="e#7087#7249#1" />
+            <element signature="method#isValidMove#0;class#Othello#0" />
+            <element signature="e#798#826#1" />
+            <element signature="method#otherColor#0;class#Othello#0" />
+            <element signature="method#checkTile#0;class#Othello#0" />
+            <element signature="method#setScore#0;class#Othello#0" />
+            <element signature="e#631#783#1" />
+            <element signature="e#671#773#1" />
+            <element signature="e#719#770#0" />
+            <element signature="n#!!block;n#getScore#0;n#Othello#0" />
+            <element signature="class#Tile#0;class#Othello#0" />
+            <element signature="method#Tile#0;class#Tile#0;class#Othello#0" />
+            <element signature="n#!!block;n#setColor#0;n#Tile#0;n#Othello#0" />
+            <element signature="n#!!block;n#getColor#0;n#Tile#0;n#Othello#0" />
+            <element signature="n#!!block;n#getX#0;n#Tile#0;n#Othello#0" />
+            <element signature="n#!!block;n#getY#0;n#Tile#0;n#Othello#0" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+  </component>
+  <component name="masterDetails">
+    <states>
+      <state key="ProjectJDKs.UI">
+        <settings>
+          <last-edited>11</last-edited>
+          <splitter-proportions>
+            <option name="proportions">
+              <list>
+                <option value="0.2" />
+              </list>
+            </option>
+          </splitter-proportions>
+        </settings>
+      </state>
+    </states>
+  </component>
+</project>
