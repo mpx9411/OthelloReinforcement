@@ -58,10 +58,10 @@ public class Othello implements Comparable {
                 turnCounter++;
             } else if (turnCounter % 2 != 0) {
                 System.out.println("Mini turn");
-                //if(Math.random() * 10 + 1 < 9)
-                 //   botMove(PLAYER.MINIMAX);
-                //else
-                makeRandomMove(PLAYER.MINIMAX);
+                if (Math.random() * 10 + 1 < 9)
+                    botMove(PLAYER.MINIMAX);
+                else
+                    makeRandomMove(PLAYER.MINIMAX);
 
                 turnCounter++;
             } else if (turnCounter % 2 == 0) {
@@ -87,10 +87,10 @@ public class Othello implements Comparable {
                 }
             }
         }
-        if(moves.isEmpty())
+        if (moves.isEmpty())
             return;
         double random = Math.random() * moves.size();
-        Tile move = moves.get((int)random);
+        Tile move = moves.get((int) random);
         makeMove(board, move.getY(), move.getX(), player);
     }
 
@@ -121,7 +121,6 @@ public class Othello implements Comparable {
         PLAYER tile = board[y][x].getPlayer();
         Tile toChange;
         if (checkTile(y + 2, x) == tile && checkTile(y + 1, x) == otherPlayer(tile))
-            board[y + 1][x].setPlayer(tile);
             board[y + 1][x].setPlayer(tile);
         if (checkTile(y - 2, x) == tile && checkTile(y - 1, x) == otherPlayer(tile))
             board[y - 1][x].setPlayer(tile);
@@ -293,14 +292,14 @@ public class Othello implements Comparable {
 
                     future.reward += future.getScore();//Add the added score of making the move to the reward
 
-                    if(future.setOver() && score > 0)
+                    if (future.setOver() && score > 0)
                         future.reward += winReward;
-                    else if(future.setOver() && score < 0)
+                    else if (future.setOver() && score < 0)
                         future.reward -= winReward;
 
 
                     double flatReward = flatFactor;
-                    if(player.equals(PLAYER.MINIMAX))
+                    if (player.equals(PLAYER.MINIMAX))
                         flatReward = flatReward * -1;
                     future.reward += board[i][j].getFlatReward() * flatFactor;
                     moves.add(future);
@@ -337,7 +336,7 @@ public class Othello implements Comparable {
     private void makeOptimalMove(PLAYER player) {
         Collections.sort(moves);
         Othello bestMove;
-        if(depth == 0) {
+        if (depth == 0) {
             for (Othello move : moves) {
                 System.out.println("Tile: " + move.lastMove.getX() + "" + move.lastMove.getY() + " Reward: " + move.reward + " Score: " + move.score);
             }
