@@ -1,6 +1,4 @@
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Scanner;
+import java.util.*;
 
 enum PLAYER {
     BLANK,
@@ -16,6 +14,7 @@ public class Othello implements Comparable {
     int nextToCorner = -20;
     int corner = 50;
     int border = 20;
+    int winReward = 100;
 
 
     static Scanner input = new Scanner(System.in);
@@ -32,7 +31,7 @@ public class Othello implements Comparable {
     Tile lastMove;
 
     int foresight = 3;
-    float discount = (float) 0.5;
+    float discount = (float) 0.7;
 
     private Othello(Tile[][] board, int depth) {
         this.board = board;
@@ -56,8 +55,8 @@ public class Othello implements Comparable {
                 turnCounter++;
             } else if (turnCounter % 2 != 0) {
                 System.out.println("Mini turn");
-                //botMove(PLAYER.MINIMAX);
-                makeRandomMove(PLAYER.MINIMAX);
+                botMove(PLAYER.MINIMAX);
+                //makeRandomMove(PLAYER.MINIMAX);
                 turnCounter++;
             } else if (turnCounter % 2 == 0) {
                 System.out.println("Markov turn");
@@ -82,9 +81,11 @@ public class Othello implements Comparable {
                 }
             }
         }
+        if(moves.isEmpty())
+            return;
         double random = Math.random() * moves.size();
         Tile move = moves.get((int)random);
-        makeMove(board, move.getY(), move.getX(), player)<;
+        makeMove(board, move.getY(), move.getX(), player);
     }
 
     private void printBoard() {                          //PRINT THE INSTANCE BOARD
@@ -232,7 +233,7 @@ public class Othello implements Comparable {
             }
         }
         this.possibleMoves = possibleMoves.size();
-        if (possibleMoves.isEmpty() || depth > 7) { //IF THERE ARE NO MORE MOVES OR IF WE'VE GONE TOO DEEP, RETURN SCORE
+        if (possibleMoves.isEmpty() || depth > 5) { //IF THERE ARE NO MORE MOVES OR IF WE'VE GONE TOO DEEP, RETURN SCORE
             return this;
         }
         for (Othello t : possibleMoves.values()) {
@@ -281,7 +282,19 @@ public class Othello implements Comparable {
                     } //Create a board that simulates a move
                     future.makeMove(future.board, i, j, color);
                     future.setScore();
-                    future.reward += future.getScore(); //Add the added score of making the move to the reward
+
+
+                    future.reward += future.getScore();//Add the added score of making the move to the reward
+
+                    if(future.setOver() && score > 0)
+                        future.reward += winReward;
+                    else if(future.setOver() && score < 0)
+                        future.reward -= winReward;
+
+
+                    double flatReward = flatFactor;
+                    if(color.equals(PLAYER.MINIMAX))
+                        flatReward = flatReward * -1;
                     future.reward += board[i][j].getFlatReward() * flatFactor;
                     moves.add(future);
                     if (depth < foresight && future.hasValidMove(otherPlayer(color))) { //Check if we've looked as far into the future as we want
@@ -304,6 +317,7 @@ public class Othello implements Comparable {
     }
 
     private void makeSecondOptimalMove(PLAYER color) {
+        Collections.sort(moves);
         Tile move;
         if (color.equals(PLAYER.MARKOV)) {
             move = moves.get(moves.size() - 2).lastMove;
@@ -314,6 +328,13 @@ public class Othello implements Comparable {
     }
 
     private void makeOptimalMove(PLAYER color) {
+        Collections.sort(moves);
+        Othello bestMove;
+        if(depth == 0) {
+            for (Othello move : moves) {
+                System.out.println("Tile: " + move.lastMove.getX() + "" + move.lastMove.getY() + " Reward: " + move.reward + " Score: " + move.score);
+            }
+        }
         if (moves.size() == 0)
             return;
         Tile move;
