@@ -18,7 +18,6 @@ public class Othello implements Comparable {
     int border = 20;
 
 
-
     static Scanner input = new Scanner(System.in);
     static HashMap<Tile, Othello> realBotMoves = new HashMap<>();
     ArrayList<Othello> moves = new ArrayList<>();
@@ -202,8 +201,8 @@ public class Othello implements Comparable {
         for (int i = 0; i < 8; i++) {
             for (int j = 0; j < 8; j++) {
                 if (isValidMove(i, j, color)) {
-                    Othello theory = new Othello(new Tile[8][8], depth+1);//IF A VALID MOVE, CREATE SCENARIO AND INSERT INTO POSSIBLE MOVES
-                    for(int k = 0; k < 8; k++) {
+                    Othello theory = new Othello(new Tile[8][8], depth + 1);//IF A VALID MOVE, CREATE SCENARIO AND INSERT INTO POSSIBLE MOVES
+                    for (int k = 0; k < 8; k++) {
                         for (int l = 0; l < 8; l++) {
 
                             theory.board[k][l] = new Tile(board[k][l].getY(), board[k][l].getX(), board[k][l].getColor());
@@ -218,7 +217,7 @@ public class Othello implements Comparable {
             }
         }
         this.possibleMoves = possibleMoves.size();
-        if (possibleMoves.isEmpty() || depth > 5) { //IF THERE ARE NO MORE MOVES OR IF WE'VE GONE TOO DEEP, RETURN SCORE
+        if (possibleMoves.isEmpty() || depth > 7) { //IF THERE ARE NO MORE MOVES OR IF WE'VE GONE TOO DEEP, RETURN SCORE
             return this;
         }
         for (Othello t : possibleMoves.values()) {
@@ -259,9 +258,9 @@ public class Othello implements Comparable {
         for (int i = 0; i < 8; i++) {
             for (int j = 0; j < 8; j++) {
                 if (isValidMove(i, j, color)) {
-                    Othello future = new Othello(new Tile[8][8], depth+1);      //IF A VALID MOVE, CREATE SCENARIO AND INSERT INTO POSSIBLE MOVES
-                    for(int k = 0; k < 8; k++){
-                        for(int l = 0; l < 8; l++){
+                    Othello future = new Othello(new Tile[8][8], depth + 1);      //IF A VALID MOVE, CREATE SCENARIO AND INSERT INTO POSSIBLE MOVES
+                    for (int k = 0; k < 8; k++) {
+                        for (int l = 0; l < 8; l++) {
                             future.board[k][l] = new Tile(board[k][l].getY(), board[k][l].getX(), board[k][l].getColor());
                         }
                     } //Create a board that simulates a move
@@ -270,14 +269,17 @@ public class Othello implements Comparable {
                     future.reward += future.getScore(); //Add the added score of making the move to the reward
                     future.reward += board[i][j].getFlatReward() * flatFactor;
                     moves.add(future);
-                    if (depth < foresight && future.moves.size() > 0) { //Check if we've looked as far into the future as we want
+                    if (depth < foresight && future.hasValidMove(otherPlayer(color))) { //Check if we've looked as far into the future as we want
                         future.setRewards(otherPlayer(color)); //Assume the other player does a similar calculation
-                        double randomizer = Math.random()*10;
-                            if (randomizer < probability || future.moves.size() < 2)
-                                future.makeOptimalMove(otherPlayer(color));
-                            else
-                                future.makeSecondOptimalMove(otherPlayer(color));
-                            future.setRewards(color);
+                        double randomizer = Math.random() * 10;
+                        Tile temp = future.lastMove;
+                        if (randomizer < probability || future.moves.size() < 2)
+                            future.makeOptimalMove(otherPlayer(color));
+                        else
+                            future.makeSecondOptimalMove(otherPlayer(color));
+                        future.setRewards(color);
+                        future.lastMove = temp;
+                        if (future.hasValidMove(color))
                             future.reward += future.moves.get(0).reward * discount; //The future move is worth it's own accumulated value plus future optimal values times a discount value
                     }
 
@@ -297,13 +299,16 @@ public class Othello implements Comparable {
     }
 
     private void makeOptimalMove(PLAYER color) {
+        if (moves.size() == 0)
+            return;
         Tile move;
-
         if (color.equals(PLAYER.MARKOV)) {
             move = moves.get(0).lastMove;
         } else {
             move = moves.get(moves.size() - 1).lastMove;
         }
+        if (depth == 0)
+            System.out.println(move.getY() + " " + move.getX());
         makeMove(board, move.getY(), move.getX(), color);
         moves.clear();
     }
@@ -413,23 +418,22 @@ public class Othello implements Comparable {
         }
 
         private void setReward() {
-            if(x == 0 || x == 7){
-                if(y == 1 || y == 6)
+            if (x == 0 || x == 7) {
+                if (y == 1 || y == 6)
                     flatReward = nextToCorner;
-                else if(y == 0 || y == 7)
+                else if (y == 0 || y == 7)
                     flatReward = corner;
                 else
                     flatReward = border;
-            }
-            else if(y == 0 || y == 7){
-                if(x == 1 || x == 6)
+            } else if (y == 0 || y == 7) {
+                if (x == 1 || x == 6)
                     flatReward = nextToCorner;
                 else
                     flatReward = border;
             }
         }
 
-        int getFlatReward(){
+        int getFlatReward() {
             return flatReward;
         }
 
