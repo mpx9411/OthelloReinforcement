@@ -12,6 +12,7 @@ enum PLAYER {
 public class Othello implements Comparable {
 
     double probability = 0.8;
+    double flatFactor = 0.3;
     int nextToCorner = -20;
     int corner = 50;
     int border = 20;
@@ -267,7 +268,7 @@ public class Othello implements Comparable {
                     future.makeMove(future.board, i, j, color);
                     future.setScore();
                     future.reward += future.getScore(); //Add the added score of making the move to the reward
-                    future.reward += board[i][j].getFlatReward();
+                    future.reward += board[i][j].getFlatReward() * flatFactor;
                     moves.add(future);
                     if (depth < foresight && future.moves.size() > 0) { //Check if we've looked as far into the future as we want
                         future.setRewards(otherPlayer(color)); //Assume the other player does a similar calculation
@@ -277,7 +278,7 @@ public class Othello implements Comparable {
                             else
                                 future.makeSecondOptimalMove(otherPlayer(color));
                             future.setRewards(color);
-                            future.reward += moves.get(0).reward * discount; //The future move is worth it's own accumulated value plus future optimal values times a discount value
+                            future.reward += future.moves.get(0).reward * discount; //The future move is worth it's own accumulated value plus future optimal values times a discount value
                     }
 
                 }
