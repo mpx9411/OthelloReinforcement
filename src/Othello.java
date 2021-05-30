@@ -250,7 +250,11 @@ public class Othello implements Comparable {
                     future.reward += board[i][j].getFlatReward();
                     if (depth < foresight) { //Check if we've looked as far into the future as we want
                         future.setRewards(otherColor(color)); //Assume the other player does a similar calculation
-                        future.makeOptimalMove(otherColor(color));
+                        double randomizer = Math.random()*10;
+                        if(randomizer < probability)
+                            future.makeOptimalMove(otherColor(color));
+                        else
+                            future.makeSecondOptimalMove(otherColor(color));
                         future.setRewards(color);
                         future.reward += moves.get(0).reward * discount; //The future move is worth it's own accumulated value plus future optimal values times a discount value
                     }
@@ -258,6 +262,16 @@ public class Othello implements Comparable {
                 }
             }
         }
+    }
+
+    private void makeSecondOptimalMove(Color color) {
+        Tile move;
+        if (color.equals(Color.BLACK)) {
+            move = moves.get(moves.size() - 2).lastMove;
+        } else {
+            move = moves.get(1).lastMove;
+        }
+        makeMove(board, move.getX(), move.getY(), color);
     }
 
     private void makeOptimalMove(Color color) {
