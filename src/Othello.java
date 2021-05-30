@@ -56,7 +56,8 @@ public class Othello implements Comparable {
                 turnCounter++;
             } else if (turnCounter % 2 != 0) {
                 System.out.println("Mini turn");
-                botMove(PLAYER.MINIMAX);
+                //botMove(PLAYER.MINIMAX);
+                makeRandomMove(PLAYER.MINIMAX);
                 turnCounter++;
             } else if (turnCounter % 2 == 0) {
                 System.out.println("Markov turn");
@@ -70,6 +71,20 @@ public class Othello implements Comparable {
             System.out.println("Markov score: " + markovTiles);
 
         }
+    }
+
+    private void makeRandomMove(PLAYER player) {
+        ArrayList<Tile> moves = new ArrayList<>();
+        for (int i = 0; i < 8; i++) {
+            for (int j = 0; j < 8; j++) {
+                if (isValidMove(i, j, player)) {
+                    moves.add(new Tile(i, j, player));
+                }
+            }
+        }
+        double random = Math.random() * moves.size();
+        Tile move = moves.get((int)random);
+        makeMove(board, move.getY(), move.getX(), player)<;
     }
 
     private void printBoard() {                          //PRINT THE INSTANCE BOARD
