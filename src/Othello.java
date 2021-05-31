@@ -1,3 +1,6 @@
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
 import java.util.*;
 
 enum PLAYER {
@@ -8,20 +11,20 @@ enum PLAYER {
 }
 
 public class Othello implements Comparable {
+    static StringBuffer buffer;
+    static Scanner inFile;
 
-    double probability = 0.8; //Base probability that opponent does a good move
-
-    double flatFactor = 0.3;
-    int foresight = 3;
-    float discount = (float) 0.7;
-    int opposingMovesReward = 30;
+    double probability; //Base probability that opponent does a good move
+    double flatFactor;
+    int foresight;
+    float discount;
+    int opposingMovesReward;
 
     //FLAT REWARDS
     int nextToCorner = -20;
     int corner = 50;
     int border = 20;
     int winReward = 100;
-
 
     static Scanner input = new Scanner(System.in);
     static HashMap<Tile, Othello> realBotMoves = new HashMap<>();
@@ -36,18 +39,33 @@ public class Othello implements Comparable {
     float reward = 0;
     Tile lastMove;
 
-    private Othello(Tile[][] board, int depth) {
+    private Othello(Tile[][] board, int depth) throws FileNotFoundException {
         this.board = board;
         this.depth = depth;
     }
 
-    public static void main(String[] args) throws InterruptedException {
+    public static void main(String[] args) throws InterruptedException, FileNotFoundException {
         Othello game = new Othello(new Tile[8][8], 0);
         System.out.println("Welcome to Othello. Enter the X and Y panel you wish to play.");
+        game.loadWeights();
         game.run();
     }
 
-    private void run() throws InterruptedException {
+    private void loadWeights() {
+        try {
+                inFile = new Scanner(new File("src/weights"));
+            } catch (FileNotFoundException e) {
+                e.printStackTrace();
+            }
+        probability = Double.parseDouble(inFile.nextLine());
+        flatFactor = Double.parseDouble(inFile.nextLine());
+        foresight = Integer.parseInt(inFile.nextLine());
+        discount = Float.parseFloat(inFile.nextLine());
+        opposingMovesReward = Integer.parseInt(inFile.nextLine());
+
+    }
+
+    private void run() throws InterruptedException, FileNotFoundException {
         constructBoard();
         while (!setOver()) {
 
@@ -195,7 +213,7 @@ public class Othello implements Comparable {
     }
 
 
-    private void botMove(PLAYER player) {                        //EXECUTE BOT MOVE WITH A CALCULATED LIST OF OPTIMAL MOVES
+    private void botMove(PLAYER player) throws FileNotFoundException {                        //EXECUTE BOT MOVE WITH A CALCULATED LIST OF OPTIMAL MOVES
         miniMax(player);
         Tile move = null;
         for (Tile t : realBotMoves.keySet()) {
@@ -215,7 +233,7 @@ public class Othello implements Comparable {
         }
     }
 
-    private Othello miniMax(PLAYER player) {
+    private Othello miniMax(PLAYER player) throws FileNotFoundException {
 
         HashMap<Tile, Othello> possibleMoves = new HashMap<>();             //STORE INSTANCES POSSIBLE MOVES
         ArrayList<Othello> optimalMoves = new ArrayList<>();                //STORE OPTIMAL MOVES
@@ -276,7 +294,7 @@ public class Othello implements Comparable {
         return this;
     }
 
-    private void setRewards(PLAYER player) {
+    private void setRewards(PLAYER player) throws FileNotFoundException {
         for (int i = 0; i < 8; i++) {
             for (int j = 0; j < 8; j++) {
                 if (isValidMove(i, j, player)) {
@@ -350,7 +368,7 @@ public class Othello implements Comparable {
             move = moves.get(moves.size() - 1).lastMove;
         }
         if (depth == 0)
-            System.out.println(move.getY() + " " + move.getX());
+            System.out.println(move.getX() + " " + move.getY());
         makeMove(board, move.getY(), move.getX(), player);
         moves.clear();
     }
