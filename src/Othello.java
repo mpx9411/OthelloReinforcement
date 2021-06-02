@@ -98,18 +98,24 @@ public class Othello implements Comparable {
     }
 
     private void adjustRandomWeight() {
-        int weight = (int) Math.random() * 4;
-        double sign = Math.random();
-        String modifier = sign < 0.5 ? String.valueOf(Math.random() * 2) : String.valueOf(Math.random() * -1);
-
-        if (weight < 1)
-            adjustWeight("probability", modifier);
-        else if (weight < 2)
-            adjustWeight("flatFactor", modifier);
-        else if (weight < 3)
-            adjustWeight("discount", modifier);
-        else if (weight < 4)
-            adjustWeight("opposingMovesReward", modifier);
+        Random random = new Random();
+        int weight = random.nextInt(4);
+        double sign = random.nextDouble();
+        String modifier = sign < 0.5 ? String.valueOf(random.nextDouble()) : String.valueOf(random.nextDouble() * -1);
+        switch(weight){
+            case 0:
+                adjustWeight("probability", modifier);
+                break;
+            case 1:
+                adjustWeight("flatFactor", modifier);
+                break;
+            case 2:
+                adjustWeight("discount", modifier);
+                break;
+            case 3:
+                adjustWeight("opposingMovesReward", modifier);
+                break;
+        }
     }
 
     // Temporarly adjustments to weights to see if improves
