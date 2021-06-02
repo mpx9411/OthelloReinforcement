@@ -28,6 +28,7 @@ public class Othello implements Comparable {
     int foresight = 3;
     float discount;
     int opposingMovesReward;
+    boolean randomBot;
 
     //FLAT REWARDS
     int nextToCorner = -20;
@@ -75,9 +76,10 @@ public class Othello implements Comparable {
 
     // Train bot through letting it play noOfGames games with its new weights
     private int trainBot(Othello game, int noOfGames) throws FileNotFoundException, InterruptedException {
-
+        randomBot = Math.random() < 0.5 ? true : false;
         int won = 0;
         for (int i = 0; i < noOfGames; i++) {
+            
             System.out.print("Running game no. " + i + " ... ");
             String winner = game.run();
             if (winner.equals("markov")) {
@@ -86,6 +88,7 @@ public class Othello implements Comparable {
             } else {
                 System.out.println("Lost match");
             }
+            turnCounter = 1;
         }
         return won;
     }
@@ -176,10 +179,10 @@ public class Othello implements Comparable {
                 turnCounter++;
             } else if (turnCounter % 2 != 0) {
 //                System.out.println("Mini turn");
-                if (Math.random() * 10 + 1 < 7)
+                if (!randomBot)
                     botMove(PLAYER.MINIMAX);
                 else
-                    makeRandomMove(PLAYER.MINIMAX);
+                   makeRandomMove(PLAYER.MINIMAX);
 
                 turnCounter++;
             } else if (turnCounter % 2 == 0) {
@@ -359,7 +362,7 @@ public class Othello implements Comparable {
             }
         }
         this.possibleMoves = possibleMoves.size();
-        if (possibleMoves.isEmpty() || depth > 7) { //IF THERE ARE NO MORE MOVES OR IF WE'VE GONE TOO DEEP, RETURN SCORE
+        if (possibleMoves.isEmpty() || depth > 5) { //IF THERE ARE NO MORE MOVES OR IF WE'VE GONE TOO DEEP, RETURN SCORE
             return this;
         }
         for (Othello t : possibleMoves.values()) {
