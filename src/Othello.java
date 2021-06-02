@@ -20,8 +20,8 @@ public class Othello implements Comparable {
     String fileName = "src/weights";
 
     // Used for adjusting weights
-    double preAdjustedWeight; 
-    double postAdjustedWeight; 
+    double preAdjustedWeight;
+    double postAdjustedWeight;
 
     double probability; //Base probability that opponent does a good move
     double flatFactor;
@@ -60,103 +60,103 @@ public class Othello implements Comparable {
         //game.adjustWeight(args[0], args[1]);
         game.adjustRandomWeight();
         int noOfGames = 10;
-        
+
         int wins = game.trainBot(game, noOfGames);
-        System.out.println("\nTotal wins: "+wins);
-        if(wins > noOfGames/2) { 
-        	try {
-				game.writeNewWeightsToFile(); // update weight in file
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
+        System.out.println("\nTotal wins: " + wins);
+        if (wins > noOfGames / 2) {
+            try {
+                game.writeNewWeightsToFile(); // update weight in file
+            } catch (IOException e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            }
         }
     }
 
     // Train bot through letting it play noOfGames games with its new weights
-	private int trainBot(Othello game, int noOfGames) throws FileNotFoundException, InterruptedException {
-    	
-    	int won=0;
-    	for(int i=0; i < noOfGames;i++) {
-    		System.out.print("Running game no. " + i + " ... ");
-    		String winner = game.run();
-    		if(winner.equals("markov")) {
-    			won++;
-    			 System.out.println("Won match");
-    		} else {
-    			 System.out.println("Lost match");
-    		}
-    	}
-    	return won;
+    private int trainBot(Othello game, int noOfGames) throws FileNotFoundException, InterruptedException {
+
+        int won = 0;
+        for (int i = 0; i < noOfGames; i++) {
+            System.out.print("Running game no. " + i + " ... ");
+            String winner = game.run();
+            if (winner.equals("markov")) {
+                won++;
+                System.out.println("Won match");
+            } else {
+                System.out.println("Lost match");
+            }
+        }
+        return won;
     }
 
-    private void adjustRandomWeight(){
-        int weight = (int) Math.random()*4;
+    private void adjustRandomWeight() {
+        int weight = (int) Math.random() * 4;
         double sign = Math.random();
-        String modifier = sign < 0.5 ? String.valueOf(Math.random()*2) : String.valueOf(Math.random() * -1);
+        String modifier = sign < 0.5 ? String.valueOf(Math.random() * 2) : String.valueOf(Math.random() * -1);
 
-        if(weight < 1)
+        if (weight < 1)
             adjustWeight("probability", modifier);
-        else if(weight < 2)
+        else if (weight < 2)
             adjustWeight("flatFactor", modifier);
-        else if(weight < 3)
+        else if (weight < 3)
             adjustWeight("discount", modifier);
-        else if(weight < 4)
+        else if (weight < 4)
             adjustWeight("opposingMovesReward", modifier);
     }
-    
-	// Temporarly adjustments to weights to see if improves
-	private void adjustWeight(String weight, String adjustment) {
-		System.out.println("Adjusting weights");
 
-		switch (weight) {
-			case "probability":
-				preAdjustedWeight = probability;
-				probability *= Double.parseDouble(adjustment);
-				postAdjustedWeight = probability;
-				break;
-			case "flatFactor":
-				preAdjustedWeight = probability;
-				probability *= Double.parseDouble(adjustment);
-				postAdjustedWeight = probability;
-				break;
-			case "discount":
-				preAdjustedWeight = probability;
-				probability *= Double.parseDouble(adjustment);
-				postAdjustedWeight = probability;
-				break;				
-			case "opposingMovesReward":
-				preAdjustedWeight = probability;
-				probability *= Double.parseDouble(adjustment);
-				postAdjustedWeight = probability;
-				break;
-			default:
-				System.out.println("No weight exists with the given name.");
-		}
-	}
-    
+    // Temporarly adjustments to weights to see if improves
+    private void adjustWeight(String weight, String adjustment) {
+        System.out.println("Adjusting weights");
+
+        switch (weight) {
+            case "probability":
+                preAdjustedWeight = probability;
+                probability *= Double.parseDouble(adjustment);
+                postAdjustedWeight = probability;
+                break;
+            case "flatFactor":
+                preAdjustedWeight = probability;
+                probability *= Double.parseDouble(adjustment);
+                postAdjustedWeight = probability;
+                break;
+            case "discount":
+                preAdjustedWeight = probability;
+                probability *= Double.parseDouble(adjustment);
+                postAdjustedWeight = probability;
+                break;
+            case "opposingMovesReward":
+                preAdjustedWeight = probability;
+                probability *= Double.parseDouble(adjustment);
+                postAdjustedWeight = probability;
+                break;
+            default:
+                System.out.println("No weight exists with the given name.");
+        }
+    }
+
     // Write new better weight to file
     // code from https://stackoverflow.com/questions/8563294/modifying-existing-file-content-in-java
     private void writeNewWeightsToFile() throws IOException {
-    	System.out.println("Saving weights. Searching for "+ preAdjustedWeight);
+        System.out.println("Saving weights. Searching for " + preAdjustedWeight);
 
-    	List<String> newLines = new ArrayList<>();
-    	for (String line : Files.readAllLines(Paths.get(fileName), StandardCharsets.UTF_8)) {
-    	    if (line.contains(Double.toString(preAdjustedWeight))) {
-    	       newLines.add(line.replace(Double.toString(preAdjustedWeight), ""+Double.toString(postAdjustedWeight)));
-    	    } else {
-    	    	newLines.add(line);
-    	    }
-    	}
-    	Files.write(Paths.get(fileName), newLines, StandardCharsets.UTF_8);		
-	}
-    
+        List<String> newLines = new ArrayList<>();
+        for (String line : Files.readAllLines(Paths.get(fileName), StandardCharsets.UTF_8)) {
+            if (line.contains(Double.toString(preAdjustedWeight))) {
+                newLines.add(line.replace(Double.toString(preAdjustedWeight), "" + Double.toString(postAdjustedWeight)));
+            } else {
+                newLines.add(line);
+            }
+        }
+        Files.write(Paths.get(fileName), newLines, StandardCharsets.UTF_8);
+    }
+
     private void loadWeights() {
         try {
-                inFile = new Scanner(new File(fileName));
-            } catch (FileNotFoundException e) {
-                e.printStackTrace();
-            }
+            inFile = new Scanner(new File(fileName));
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        }
         probability = Double.parseDouble(inFile.nextLine());
         flatFactor = Double.parseDouble(inFile.nextLine());
         foresight = Integer.parseInt(inFile.nextLine());
@@ -190,12 +190,12 @@ public class Othello implements Comparable {
             }
             printBoard();
 //
-          System.out.println("Mini score: " + miniTiles);
+            System.out.println("Mini score: " + miniTiles);
             System.out.println("Markov score: " + markovTiles);
 
         }
-        
-        return (miniTiles>markovTiles? "mini": (miniTiles<markovTiles? "markov":"tie"));
+
+        return (miniTiles > markovTiles ? "mini" : (miniTiles < markovTiles ? "markov" : "tie"));
     }
 
     private void makeRandomMove(PLAYER player) {
@@ -399,8 +399,8 @@ public class Othello implements Comparable {
     private void setRewards(PLAYER player) throws FileNotFoundException {
         for (int i = 0; i < 8; i++) {
             for (int j = 0; j < 8; j++) {
-                if (isValidMove(i, j, player)) {
-                    Othello future = new Othello(new Tile[8][8], depth + 1);      //IF A VALID MOVE, CREATE SCENARIO AND INSERT INTO POSSIBLE MOVES
+                if (isValidMove(i, j, player)) { /**Proceed if the tile in the current iteration is a viable move **/
+                    Othello future = new Othello(new Tile[8][8], depth + 1);      /**Simulate performing the move by creating a new board and playing it out **/
                     for (int k = 0; k < 8; k++) {
                         for (int l = 0; l < 8; l++) {
                             future.board[k][l] = new Tile(board[k][l].getY(), board[k][l].getX(), board[k][l].getPlayer());
@@ -410,31 +410,32 @@ public class Othello implements Comparable {
                     future.setScore();
 
 
-                    future.reward += future.getScore();//Add the added score of making the move to the reward
+                    future.reward += future.getScore(); /**Add the total score to the reward of the simulated game **/
 
                     if (future.setOver() && score > 0)
-                        future.reward += winReward;
+                        future.reward += winReward;  /**If the game is a win, add win-reward to the total reward for following the simulation**/
                     else if (future.setOver() && score < 0)
-                        future.reward -= winReward;
+                        future.reward -= winReward; /**If the game is a loss, subtract the win reward **/
 
 
                     double flatReward = flatFactor;
                     if (player.equals(PLAYER.MINIMAX))
-                        flatReward = flatReward * -1;
-                    future.reward += board[i][j].getFlatReward() * flatFactor;
+                        future.reward += board[i][j].getFlatReward() * flatFactor * -1; /**Assume the other player is running the same calculation but with negative rewards**/
+                    else
+                        future.reward += board[i][j].getFlatReward() * flatFactor;
                     moves.add(future);
-                    if (depth < foresight && future.hasValidMove(otherPlayer(player))) { //Check if we've looked as far into the future as we want
-                        future.setRewards(otherPlayer(player)); //Assume the other player does a similar calculation
+                    if (depth < foresight && future.hasValidMove(otherPlayer(player))) { /**Check if we've checked as far ahead as we should**/
+                        future.setRewards(otherPlayer(player)); /**Assume the other player does a similar calculation**/
                         double randomizer = Math.random() * 10;
                         Tile temp = future.lastMove;
                         if (randomizer < probability || future.moves.size() < 2)
-                            future.makeOptimalMove(otherPlayer(player));
+                            future.makeOptimalMove(otherPlayer(player)); /**Assume that MOST of the time the other player will do an optimal move **/
                         else
-                            future.makeSecondOptimalMove(otherPlayer(player));
+                            future.makeSecondOptimalMove(otherPlayer(player)); /**Assume that sometimes the other player will do the second best move **/
                         future.setRewards(player);
                         future.lastMove = temp;
                         if (future.hasValidMove(player))
-                            future.reward += future.moves.get(0).reward * discount; //The future move is worth it's own accumulated value plus future optimal values times a discount value
+                            future.reward += future.moves.get(0).reward * discount; /**The move is worth it's own accumulated value plus future optimal values times a discount value, according to the Markov Decision Process**/
                     }
 
                 }
