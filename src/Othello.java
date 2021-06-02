@@ -17,14 +17,14 @@ enum PLAYER {
 public class Othello implements Comparable {
     static StringBuffer buffer;
     static Scanner inFile;
-    String fileName = "weights";
+    String fileName = "src/weights";
 
     double preAdjustedWeight; 
     double postAdjustedWeight; 
 
     double probability; //Base probability that opponent does a good move
     double flatFactor;
-    int foresight;
+    int foresight = 3;
     float discount;
     int opposingMovesReward;
 
@@ -56,9 +56,9 @@ public class Othello implements Comparable {
         Othello game = new Othello(new Tile[8][8], 0);
         System.out.println("Welcome");
         game.loadWeights();
-        game.adjustWeight(args[0], args[1]);
-        
-        int noOfGames = Integer.parseInt(args[2]);
+        //game.adjustWeight(args[0], args[1]);
+        game.adjustRandomWeight();
+        int noOfGames = 10;
         
         int wins = game.trainBot(game, noOfGames);
         System.out.println("\nTotal wins: "+wins);
@@ -87,6 +87,21 @@ public class Othello implements Comparable {
     	}
     	return won;
     }
+
+    private void adjustRandomWeight(){
+        int weight = (int) Math.random()*4;
+        double sign = Math.random();
+        String modifier = sign < 0.5 ? String.valueOf(Math.random()*2) : String.valueOf(Math.random() * -1);
+
+        if(weight < 1)
+            adjustWeight("probability", modifier);
+        else if(weight < 2)
+            adjustWeight("flatFactor", modifier);
+        else if(weight < 3)
+            adjustWeight("discount", modifier);
+        else if(weight < 4)
+            adjustWeight("opposingMovesReward", modifier);
+    }
     
 	// Temporarly adjustments to weights to see if improves
 	private void adjustWeight(String weight, String adjustment) {
@@ -95,27 +110,22 @@ public class Othello implements Comparable {
 		switch (weight) {
 			case "probability":
 				preAdjustedWeight = probability;
-				probability += Double.parseDouble(adjustment);
+				probability *= Double.parseDouble(adjustment);
 				postAdjustedWeight = probability;
 				break;
 			case "flatFactor":
 				preAdjustedWeight = probability;
-				probability += Double.parseDouble(adjustment);
-				postAdjustedWeight = probability;
-				break;
-			case "foresight":
-				preAdjustedWeight = probability;
-				probability += Double.parseDouble(adjustment);
+				probability *= Double.parseDouble(adjustment);
 				postAdjustedWeight = probability;
 				break;
 			case "discount":
 				preAdjustedWeight = probability;
-				probability += Double.parseDouble(adjustment);
+				probability *= Double.parseDouble(adjustment);
 				postAdjustedWeight = probability;
 				break;				
 			case "opposingMovesReward":
 				preAdjustedWeight = probability;
-				probability += Double.parseDouble(adjustment);
+				probability *= Double.parseDouble(adjustment);
 				postAdjustedWeight = probability;
 				break;
 			default:
@@ -165,7 +175,7 @@ public class Othello implements Comparable {
                 turnCounter++;
             } else if (turnCounter % 2 != 0) {
 //                System.out.println("Mini turn");
-                if (Math.random() * 10 + 1 < 9)
+                if (Math.random() * 10 + 1 < 7)
                     botMove(PLAYER.MINIMAX);
                 else
                     makeRandomMove(PLAYER.MINIMAX);
@@ -177,10 +187,10 @@ public class Othello implements Comparable {
                 makeOptimalMove(PLAYER.MARKOV);
                 turnCounter++;
             }
-//            printBoard();
+            printBoard();
 //
-//            System.out.println("Mini score: " + miniTiles);
-//            System.out.println("Markov score: " + markovTiles);
+          System.out.println("Mini score: " + miniTiles);
+            System.out.println("Markov score: " + markovTiles);
 
         }
         
@@ -348,7 +358,7 @@ public class Othello implements Comparable {
             }
         }
         this.possibleMoves = possibleMoves.size();
-        if (possibleMoves.isEmpty() || depth > 5) { //IF THERE ARE NO MORE MOVES OR IF WE'VE GONE TOO DEEP, RETURN SCORE
+        if (possibleMoves.isEmpty() || depth > 7) { //IF THERE ARE NO MORE MOVES OR IF WE'VE GONE TOO DEEP, RETURN SCORE
             return this;
         }
         for (Othello t : possibleMoves.values()) {
