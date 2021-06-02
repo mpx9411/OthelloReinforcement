@@ -19,6 +19,7 @@ public class Othello implements Comparable {
     static Scanner inFile;
     String fileName = "weights";
 
+    // Used for adjusting weights
     double preAdjustedWeight; 
     double postAdjustedWeight; 
 
@@ -62,9 +63,9 @@ public class Othello implements Comparable {
         
         int wins = game.trainBot(game, noOfGames);
         System.out.println("\nTotal wins: "+wins);
-        if(wins > noOfGames/2) { // update weight in file
+        if(wins > noOfGames/2) { 
         	try {
-				game.keepWeights();
+				game.writeNewWeightsToFile(); // update weight in file
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
@@ -72,17 +73,18 @@ public class Othello implements Comparable {
         }
     }
 
-	private int trainBot(Othello game, int noOfTimes) throws FileNotFoundException, InterruptedException {
+    // Train bot through letting it play noOfGames games with its new weights
+	private int trainBot(Othello game, int noOfGames) throws FileNotFoundException, InterruptedException {
     	
     	int won=0;
-    	for(int i=0; i < noOfTimes;i++) {
-    		System.out.println("Running game no " + i);
+    	for(int i=0; i < noOfGames;i++) {
+    		System.out.print("Running game no. " + i + " ... ");
     		String winner = game.run();
     		if(winner.equals("markov")) {
     			won++;
-    			 System.out.println("Won match ");
+    			 System.out.println("Won match");
     		} else {
-    			 System.out.println("Lost match ");
+    			 System.out.println("Lost match");
     		}
     	}
     	return won;
@@ -125,13 +127,12 @@ public class Othello implements Comparable {
     
     // Write new better weight to file
     // code from https://stackoverflow.com/questions/8563294/modifying-existing-file-content-in-java
-    private void keepWeights() throws IOException {
+    private void writeNewWeightsToFile() throws IOException {
     	System.out.println("Saving weights. Searching for "+ preAdjustedWeight);
 
     	List<String> newLines = new ArrayList<>();
     	for (String line : Files.readAllLines(Paths.get(fileName), StandardCharsets.UTF_8)) {
     	    if (line.contains(Double.toString(preAdjustedWeight))) {
-    	    	System.out.println("HERE HE IS");
     	       newLines.add(line.replace(Double.toString(preAdjustedWeight), ""+Double.toString(postAdjustedWeight)));
     	    } else {
     	    	newLines.add(line);
