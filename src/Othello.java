@@ -2,6 +2,10 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.util.*;
+import java.io.IOException;  // Import the IOException class to handle errors
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 
 enum PLAYER {
     BLANK,
@@ -13,6 +17,10 @@ enum PLAYER {
 public class Othello implements Comparable {
     static StringBuffer buffer;
     static Scanner inFile;
+    String fileName = "weights";
+
+    double preAdjustedWeight; 
+    double postAdjustedWeight; 
 
     double probability; //Base probability that opponent does a good move
     double flatFactor;
@@ -46,14 +54,95 @@ public class Othello implements Comparable {
 
     public static void main(String[] args) throws InterruptedException, FileNotFoundException {
         Othello game = new Othello(new Tile[8][8], 0);
-        System.out.println("Welcome to Othello. Enter the X and Y panel you wish to play.");
+        System.out.println("Welcome");
         game.loadWeights();
-        game.run();
+        game.adjustWeight(args[0], args[1]);
+        
+        int noOfGames = Integer.parseInt(args[2]);
+        
+        int wins = game.trainBot(game, noOfGames);
+        System.out.println("\nTotal wins: "+wins);
+        if(wins > noOfGames/2) { // update weight in file
+        	try {
+				game.keepWeights();
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+        }
     }
 
+	private int trainBot(Othello game, int noOfTimes) throws FileNotFoundException, InterruptedException {
+    	
+    	int won=0;
+    	for(int i=0; i < noOfTimes;i++) {
+    		System.out.println("Running game no " + i);
+    		String winner = game.run();
+    		if(winner.equals("markov")) {
+    			won++;
+    			 System.out.println("Won match ");
+    		} else {
+    			 System.out.println("Lost match ");
+    		}
+    	}
+    	return won;
+    }
+    
+	// Temporarly adjustments to weights to see if improves
+	private void adjustWeight(String weight, String adjustment) {
+		System.out.println("Adjusting weights");
+
+		switch (weight) {
+			case "probability":
+				preAdjustedWeight = probability;
+				probability += Double.parseDouble(adjustment);
+				postAdjustedWeight = probability;
+				break;
+			case "flatFactor":
+				preAdjustedWeight = probability;
+				probability += Double.parseDouble(adjustment);
+				postAdjustedWeight = probability;
+				break;
+			case "foresight":
+				preAdjustedWeight = probability;
+				probability += Double.parseDouble(adjustment);
+				postAdjustedWeight = probability;
+				break;
+			case "discount":
+				preAdjustedWeight = probability;
+				probability += Double.parseDouble(adjustment);
+				postAdjustedWeight = probability;
+				break;				
+			case "opposingMovesReward":
+				preAdjustedWeight = probability;
+				probability += Double.parseDouble(adjustment);
+				postAdjustedWeight = probability;
+				break;
+			default:
+				System.out.println("No weight exists with the given name.");
+		}
+	}
+    
+    // Write new better weight to file
+    // code from https://stackoverflow.com/questions/8563294/modifying-existing-file-content-in-java
+    private void keepWeights() throws IOException {
+    	System.out.println("Saving weights. Searching for "+ preAdjustedWeight);
+
+    	List<String> newLines = new ArrayList<>();
+    	for (String line : Files.readAllLines(Paths.get(fileName), StandardCharsets.UTF_8)) {
+    	    if (line.contains(Double.toString(preAdjustedWeight))) {
+    	    	System.out.println("HERE HE IS");
+    	       newLines.add(line.replace(Double.toString(preAdjustedWeight), ""+Double.toString(postAdjustedWeight)));
+    	    } else {
+    	    	newLines.add(line);
+    	    }
+    	}
+    	Files.write(Paths.get(fileName), newLines, StandardCharsets.UTF_8);		
+	}
+    
     private void loadWeights() {
         try {
-                inFile = new Scanner(new File("src/weights"));
+                inFile = new Scanner(new File(fileName));
             } catch (FileNotFoundException e) {
                 e.printStackTrace();
             }
@@ -65,7 +154,7 @@ public class Othello implements Comparable {
 
     }
 
-    private void run() throws InterruptedException, FileNotFoundException {
+    private String run() throws InterruptedException, FileNotFoundException {
         constructBoard();
         while (!setOver()) {
 
@@ -75,7 +164,7 @@ public class Othello implements Comparable {
                 miniMoveStart();
                 turnCounter++;
             } else if (turnCounter % 2 != 0) {
-                System.out.println("Mini turn");
+//                System.out.println("Mini turn");
                 if (Math.random() * 10 + 1 < 9)
                     botMove(PLAYER.MINIMAX);
                 else
@@ -83,17 +172,19 @@ public class Othello implements Comparable {
 
                 turnCounter++;
             } else if (turnCounter % 2 == 0) {
-                System.out.println("Markov turn");
+//                System.out.println("Markov turn");
                 setRewards(PLAYER.MARKOV);
                 makeOptimalMove(PLAYER.MARKOV);
                 turnCounter++;
             }
-            printBoard();
-
-            System.out.println("Mini score: " + miniTiles);
-            System.out.println("Markov score: " + markovTiles);
+//            printBoard();
+//
+//            System.out.println("Mini score: " + miniTiles);
+//            System.out.println("Markov score: " + markovTiles);
 
         }
+        
+        return (miniTiles>markovTiles? "mini": (miniTiles<markovTiles? "markov":"tie"));
     }
 
     private void makeRandomMove(PLAYER player) {
@@ -225,11 +316,11 @@ public class Othello implements Comparable {
             }
         }
         if (move != null) {
-            System.out.println("Tile " + move.getX() + "" + move.getY());
+//            System.out.println("Tile " + move.getX() + "" + move.getY());
             makeMove(board, move.getY(), move.getX(), player);
             realBotMoves.clear();
         } else {
-            System.out.println("No valid moves");
+//            System.out.println("No valid moves");
         }
     }
 
@@ -353,12 +444,12 @@ public class Othello implements Comparable {
 
     private void makeOptimalMove(PLAYER player) {
         Collections.sort(moves);
-        Othello bestMove;
-        if (depth == 0) {
-            for (Othello move : moves) {
-                System.out.println("Tile: " + move.lastMove.getX() + "" + move.lastMove.getY() + " Reward: " + move.reward + " Score: " + move.score);
-            }
-        }
+
+//        if (depth == 0) {
+////            for (Othello move : moves) {
+////                System.out.println("Tile: " + move.lastMove.getX() + "" + move.lastMove.getY() + " Reward: " + move.reward + " Score: " + move.score);
+////            }
+//        }
         if (moves.size() == 0)
             return;
         Tile move;
@@ -367,8 +458,8 @@ public class Othello implements Comparable {
         } else {
             move = moves.get(moves.size() - 1).lastMove;
         }
-        if (depth == 0)
-            System.out.println(move.getX() + " " + move.getY());
+//        if (depth == 0)
+//            System.out.println(move.getX() + " " + move.getY());
         makeMove(board, move.getY(), move.getX(), player);
         moves.clear();
     }
