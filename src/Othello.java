@@ -25,15 +25,15 @@ public class Othello implements Comparable {
 
     double probability; //Base probability that opponent does a good move
     double flatFactor;
-    int foresight = 3;
+    int foresight = 4;
     float discount;
     int opposingMovesReward;
     boolean randomBot;
 
     //FLAT REWARDS
     int nextToCorner = -20;
-    int corner = 50;
-    int border = 20;
+    int corner = 5;
+    int border = 2;
     int winReward = 100;
 
     static Scanner input = new Scanner(System.in);
@@ -60,17 +60,21 @@ public class Othello implements Comparable {
         game.loadWeights();
         //game.adjustWeight(args[0], args[1]);
         game.adjustRandomWeight();
-        int noOfGames = 10;
+        int loop = 100;
+        while (loop > 0) {
+            int noOfGames = 10;
 
-        int wins = game.trainBot(game, noOfGames);
-        System.out.println("\nTotal wins: " + wins);
-        if (wins > noOfGames / 2) {
-            try {
-                game.writeNewWeightsToFile(); // update weight in file
-            } catch (IOException e) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
+            int wins = game.trainBot(game, noOfGames);
+            System.out.println("\nTotal wins: " + wins);
+            if (wins > noOfGames / 2) {
+                try {
+                    game.writeNewWeightsToFile(); // update weight in file
+                } catch (IOException e) {
+                    // TODO Auto-generated catch block
+                    e.printStackTrace();
+                }
             }
+            loop--;
         }
     }
 
@@ -79,7 +83,7 @@ public class Othello implements Comparable {
         randomBot = Math.random() < 0.5 ? true : false;
         int won = 0;
         for (int i = 0; i < noOfGames; i++) {
-            
+
             System.out.print("Running game no. " + i + " ... ");
             String winner = game.run();
             if (winner.equals("markov")) {
@@ -182,7 +186,7 @@ public class Othello implements Comparable {
                 if (!randomBot)
                     botMove(PLAYER.MINIMAX);
                 else
-                   makeRandomMove(PLAYER.MINIMAX);
+                    makeRandomMove(PLAYER.MINIMAX);
 
                 turnCounter++;
             } else if (turnCounter % 2 == 0) {
@@ -400,50 +404,58 @@ public class Othello implements Comparable {
     }
 
     private void setRewards(PLAYER player) throws FileNotFoundException {
+        possibleMoves = 0;
         for (int i = 0; i < 8; i++) {
             for (int j = 0; j < 8; j++) {
                 if (isValidMove(i, j, player)) { /**Proceed if the tile in the current iteration is a viable move **/
-                    Othello future = new Othello(new Tile[8][8], depth + 1);      /**Simulate performing the move by creating a new board and playing it out **/
-                    for (int k = 0; k < 8; k++) {
-                        for (int l = 0; l < 8; l++) {
-                            future.board[k][l] = new Tile(board[k][l].getY(), board[k][l].getX(), board[k][l].getPlayer());
-                        }
-                    } //Create a board that simulates a move
-                    future.makeMove(future.board, i, j, player);
+                    possibleMoves++;
+                    Othello future = simulateBoard();
+                    future.makeMove(future.board, i, j, player); /**Make the move in a simulated board**/
                     future.setScore();
+                    future.reward += future.getScore() - getScore(); /**Add the added score to the reward of the simulated game **/
+                    future.reward += player.equals(PLAYER.MINIMAX) ? (board[i][j].getFlatReward() * flatFactor * -1) : (future.reward += board[i][j].getFlatReward() * flatFactor); /**Add the flat reward for the tile taken**/
 
-
-                    future.reward += future.getScore(); /**Add the total score to the reward of the simulated game **/
-
-                    if (future.setOver() && score > 0)
-                        future.reward += winReward;  /**If the game is a win, add win-reward to the total reward for following the simulation**/
-                    else if (future.setOver() && score < 0)
-                        future.reward -= winReward; /**If the game is a loss, subtract the win reward **/
-
-
-                    double flatReward = flatFactor;
-                    if (player.equals(PLAYER.MINIMAX))
-                        future.reward += board[i][j].getFlatReward() * flatFactor * -1; /**Assume the other player is running the same calculation but with negative rewards**/
-                    else
-                        future.reward += board[i][j].getFlatReward() * flatFactor;
-                    moves.add(future);
-                    if (depth < foresight && future.hasValidMove(otherPlayer(player))) { /**Check if we've checked as far ahead as we should**/
-                        future.setRewards(otherPlayer(player)); /**Assume the other player does a similar calculation**/
-                        double randomizer = Math.random() * 10;
-                        Tile temp = future.lastMove;
-                        if (randomizer < probability || future.moves.size() < 2)
-                            future.makeOptimalMove(otherPlayer(player)); /**Assume that MOST of the time the other player will do an optimal move **/
-                        else
-                            future.makeSecondOptimalMove(otherPlayer(player)); /**Assume that sometimes the other player will do the second best move **/
-                        future.setRewards(player);
-                        future.lastMove = temp;
-                        if (future.hasValidMove(player))
-                            future.reward += future.moves.get(0).reward * discount; /**The move is worth it's own accumulated value plus future optimal values times a discount value, according to the Markov Decision Process**/
+                    if (future.setOver()) { /**Set the reward depending on which player we are simulating the move on**/
+                        if (score < 0)
+                            future.reward += player.equals(PLAYER.MINIMAX) ? (winReward * -1) : winReward;
+                        else if (score > 0)
+                            future.reward -= player.equals(PLAYER.MINIMAX) ? (winReward * -1) : winReward;
                     }
 
+                    if (future.hasValidMove(otherPlayer(player)) && depth < foresight) { /**If we want to go deeper**/
+                        Tile temp = future.lastMove;
+                        future.setRewards(otherPlayer(player));
+                        future.reward += player.equals(PLAYER.MINIMAX) ? possibleMoves * opposingMovesReward * -1 : possibleMoves * opposingMovesReward; /**Add reward for limiting the other player's options.**/
+                        if (Math.random() * 10 < probability || future.moves.size() < 2)
+                            future.makeOptimalMove(otherPlayer(player)); /**Assume that MOST of the time the other player will do an optimal move **/
+                        else
+                            future.makeSecondOptimalMove(otherPlayer(player));/**Assume that sometimes the other player will do the second best move **/
+
+
+                        future.setRewards(player);
+                        if (future.hasValidMove(player))
+                            future.reward += player.equals(PLAYER.MINIMAX) ? future.moves.get(0).reward * discount * -1 : future.moves.get(0).reward * discount; /**The move is worth it's own accumulated value plus future optimal values times a discount value, according to the Markov Decision Process**/
+                        future.lastMove = temp;
+                    }
+                    moves.add(future);
+
+
                 }
+
             }
+
+
         }
+    }
+
+    private Othello simulateBoard() throws FileNotFoundException {
+        Othello future = new Othello(new Tile[8][8], depth + 1);      /**Simulate performing the move by creating a new board and playing it out **/
+        for (int k = 0; k < 8; k++) {
+            for (int l = 0; l < 8; l++) {
+                future.board[k][l] = new Tile(board[k][l].getY(), board[k][l].getX(), board[k][l].getPlayer());
+            }
+        } //Create a board that simulates a move
+        return future;
     }
 
     private void makeSecondOptimalMove(PLAYER player) {
