@@ -425,7 +425,7 @@ public class Othello implements Comparable {
                     if (future.hasValidMove(otherPlayer(player)) && depth < foresight) { /**If we want to go deeper**/
                         Tile temp = future.lastMove;
                         future.setRewards(otherPlayer(player));
-                        future.reward += player.equals(PLAYER.MINIMAX) ? possibleMoves * opposingMovesReward * -1 : possibleMoves * opposingMovesReward; /**Add reward for limiting the other player's options.**/
+                        future.reward += player.equals(PLAYER.MINIMAX) ? possibleMoves * opposingMovesReward : possibleMoves * opposingMovesReward * -1; /**Add reward for limiting the other player's options.**/
                         if (Math.random() * 10 < probability || future.moves.size() < 2)
                             future.makeOptimalMove(otherPlayer(player)); /**Assume that MOST of the time the other player will do an optimal move **/
                         else
