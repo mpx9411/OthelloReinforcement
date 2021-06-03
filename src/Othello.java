@@ -28,8 +28,8 @@ public class Othello implements Comparable {
 
     double probability; //Base probability that opponent does a good move
     double flatFactor;
-    float discount;
-    int opposingMovesReward;
+    double discount;
+    double opposingMovesReward;
 
 
     boolean randomBot; //Boolean that determines if opponent is minimax or a randomizer.
@@ -155,12 +155,12 @@ public class Othello implements Comparable {
                 break;
             case "discount":
                 preAdjustedWeight = discount;
-                discount = (float) (discount * Double.parseDouble(adjustment));
+                discount = discount * Double.parseDouble(adjustment);
                 postAdjustedWeight = discount;
                 break;
             case "opposingMovesReward":
                 preAdjustedWeight = opposingMovesReward;
-                opposingMovesReward = (int) (opposingMovesReward * Double.parseDouble(adjustment));
+                opposingMovesReward = opposingMovesReward * Double.parseDouble(adjustment);
                 postAdjustedWeight = opposingMovesReward;
                 break;
             default:
