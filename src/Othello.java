@@ -145,22 +145,22 @@ public class Othello implements Comparable {
         switch (weight) {
             case "probability":
                 preAdjustedWeight = probability;
-                probability *= Double.parseDouble(adjustment);
+                probability =  probability * Double.parseDouble(adjustment);
                 postAdjustedWeight = probability;
                 break;
             case "flatFactor":
                 preAdjustedWeight = flatFactor;
-                flatFactor *= Double.parseDouble(adjustment);
+                flatFactor = flatFactor * Double.parseDouble(adjustment);
                 postAdjustedWeight = flatFactor;
                 break;
             case "discount":
                 preAdjustedWeight = discount;
-                discount *= Double.parseDouble(adjustment);
+                discount = (float) (discount * Double.parseDouble(adjustment));
                 postAdjustedWeight = discount;
                 break;
             case "opposingMovesReward":
                 preAdjustedWeight = opposingMovesReward;
-                opposingMovesReward *= Double.parseDouble(adjustment);
+                opposingMovesReward = (int) (opposingMovesReward * Double.parseDouble(adjustment));
                 postAdjustedWeight = opposingMovesReward;
                 break;
             default:
