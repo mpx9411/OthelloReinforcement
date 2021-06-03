@@ -1,11 +1,15 @@
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.io.FileReader;
-import java.util.*;
-import java.io.IOException;  // Import the IOException class to handle errors
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Random;
+import java.util.Scanner;
 
 enum PLAYER {
     BLANK,
@@ -15,7 +19,6 @@ enum PLAYER {
 }
 
 public class Othello implements Comparable {
-    static StringBuffer buffer;
     static Scanner inFile;
     String fileName = "src/weights";
 
@@ -25,16 +28,20 @@ public class Othello implements Comparable {
 
     double probability; //Base probability that opponent does a good move
     double flatFactor;
-    int foresight = 4;
     float discount;
     int opposingMovesReward;
-    boolean randomBot;
+
+
+    boolean randomBot; //Boolean that determines if opponent is minimax or a randomizer.
 
     //FLAT REWARDS
     int nextToCorner = -20;
     int corner = 5;
     int border = 2;
     int winReward = 100;
+
+    //Amount of steps ahead to check
+    int foresight = 4;
 
     static Scanner input = new Scanner(System.in);
     static HashMap<Tile, Othello> realBotMoves = new HashMap<>();
@@ -58,7 +65,6 @@ public class Othello implements Comparable {
         Othello game = new Othello(new Tile[8][8], 0);
         System.out.println("Welcome");
         game.loadWeights();
-        //game.adjustWeight(args[0], args[1]);
         game.adjustRandomWeight();
         int loop = 100;
         while (loop > 0) {
@@ -78,7 +84,14 @@ public class Othello implements Comparable {
         }
     }
 
-    // Train bot through letting it play noOfGames games with its new weights
+    /**
+     * Train bot through letting it play noOfGames games with its new weights
+     * @param game
+     * @param noOfGames
+     * @return
+     * @throws FileNotFoundException
+     * @throws InterruptedException
+     */
     private int trainBot(Othello game, int noOfGames) throws FileNotFoundException, InterruptedException {
         randomBot = Math.random() < 0.5 ? true : false;
         int won = 0;
@@ -97,6 +110,9 @@ public class Othello implements Comparable {
         return won;
     }
 
+    /**
+     * Randomize a weight to be adjusted
+     */
     private void adjustRandomWeight() {
         Random random = new Random();
         int weight = random.nextInt(4);
@@ -118,7 +134,11 @@ public class Othello implements Comparable {
         }
     }
 
-    // Temporarly adjustments to weights to see if improves
+    /**
+     * Adjust a given weight with a given adjustment factor
+     * @param weight
+     * @param adjustment
+     */
     private void adjustWeight(String weight, String adjustment) {
         System.out.println("Adjusting weights");
 
@@ -129,27 +149,28 @@ public class Othello implements Comparable {
                 postAdjustedWeight = probability;
                 break;
             case "flatFactor":
-                preAdjustedWeight = probability;
-                probability *= Double.parseDouble(adjustment);
-                postAdjustedWeight = probability;
+                preAdjustedWeight = flatFactor;
+                flatFactor *= Double.parseDouble(adjustment);
+                postAdjustedWeight = flatFactor;
                 break;
             case "discount":
-                preAdjustedWeight = probability;
-                probability *= Double.parseDouble(adjustment);
-                postAdjustedWeight = probability;
+                preAdjustedWeight = discount;
+                discount *= Double.parseDouble(adjustment);
+                postAdjustedWeight = discount;
                 break;
             case "opposingMovesReward":
-                preAdjustedWeight = probability;
-                probability *= Double.parseDouble(adjustment);
-                postAdjustedWeight = probability;
+                preAdjustedWeight = opposingMovesReward;
+                opposingMovesReward *= Double.parseDouble(adjustment);
+                postAdjustedWeight = opposingMovesReward;
                 break;
             default:
                 System.out.println("No weight exists with the given name.");
         }
     }
 
-    // Write new better weight to file
-    // code from https://stackoverflow.com/questions/8563294/modifying-existing-file-content-in-java
+    /** Write new better weight to file
+     *  code from https://stackoverflow.com/questions/8563294/modifying-existing-file-content-in-java
+     **/
     private void writeNewWeightsToFile() throws IOException {
         System.out.println("Saving weights. Searching for " + preAdjustedWeight);
 
@@ -164,6 +185,9 @@ public class Othello implements Comparable {
         Files.write(Paths.get(fileName), newLines, StandardCharsets.UTF_8);
     }
 
+    /**
+     * Load the weights from the file
+     */
     private void loadWeights() {
         try {
             inFile = new Scanner(new File(fileName));
@@ -178,6 +202,12 @@ public class Othello implements Comparable {
 
     }
 
+    /**
+     * Runs a game.
+     * @return
+     * @throws InterruptedException
+     * @throws FileNotFoundException
+     */
     private String run() throws InterruptedException, FileNotFoundException {
         constructBoard();
         while (!setOver()) {
@@ -211,6 +241,10 @@ public class Othello implements Comparable {
         return (miniTiles > markovTiles ? "mini" : (miniTiles < markovTiles ? "markov" : "tie"));
     }
 
+    /**
+     * Make a random move
+     * @param player
+     */
     private void makeRandomMove(PLAYER player) {
         ArrayList<Tile> moves = new ArrayList<>();
         for (int i = 0; i < 8; i++) {
@@ -227,6 +261,9 @@ public class Othello implements Comparable {
         makeMove(board, move.getY(), move.getX(), player);
     }
 
+    /**
+     * Print out the board.
+     */
     private void printBoard() {                          //PRINT THE INSTANCE BOARD
         System.out.println("Turn " + turnCounter);
         System.out.println("   0  1  2  3  4  5  6  7");
@@ -250,6 +287,11 @@ public class Othello implements Comparable {
         System.out.println();
     }
 
+    /**
+     * Check for tiles that are to be flipped.
+     * @param y
+     * @param x
+     */
     private void flipTiles(int y, int x) {               //CHECK IF ANY OCCUPIED TILES ARE BETWEEN TWO TILES OF OTHER PLAYER
         PLAYER tile = board[y][x].getPlayer();
         Tile toChange;
@@ -272,6 +314,9 @@ public class Othello implements Comparable {
 
     }
 
+    /**
+     * Perform starting move for miniMax bot.
+     */
     private void miniMoveStart() {                        //SINCE START OF GAME IS PERFECTLY SYMMETRICAL, WE CAN RANDOMIZE THE BOT'S FIRST MOVE IF HE BEGINS
         double move = Math.floor(Math.random() * 3);
         switch ((int) move) {
@@ -290,6 +335,9 @@ public class Othello implements Comparable {
         }
     }
 
+    /**
+     * Make a manual move
+     */
     private void manualMove() {
         PLAYER myPlayer = PLAYER.MARKOV;
         if (hasValidMove(myPlayer)) {
@@ -304,6 +352,11 @@ public class Othello implements Comparable {
         }
     }
 
+    /**
+     * Check if a move is valid.
+     * @param player
+     * @return
+     */
     private boolean hasValidMove(PLAYER player) {
         for (int i = 0; i < 8; i++) {
             for (int j = 0; j < 8; j++) {
@@ -315,6 +368,10 @@ public class Othello implements Comparable {
         return false;
     }
 
+    /**
+     * Checks if any player has a valid move and can continue the game
+     * @return boolean that says the state of the game
+     */
     private boolean setOver() {                      //CHECK IF GAME IS OVER
         for (int i = 0; i < 8; i++) {
             for (int j = 0; j < 8; j++) {
@@ -328,6 +385,11 @@ public class Othello implements Comparable {
     }
 
 
+    /**
+     * Make automated move with MiniMax.
+     * @param player
+     * @throws FileNotFoundException
+     */
     private void botMove(PLAYER player) throws FileNotFoundException {                        //EXECUTE BOT MOVE WITH A CALCULATED LIST OF OPTIMAL MOVES
         miniMax(player);
         Tile move = null;
@@ -340,14 +402,18 @@ public class Othello implements Comparable {
             }
         }
         if (move != null) {
-//            System.out.println("Tile " + move.getX() + "" + move.getY());
             makeMove(board, move.getY(), move.getX(), player);
             realBotMoves.clear();
         } else {
-//            System.out.println("No valid moves");
         }
     }
 
+    /**
+     * MiniMax algorithm
+     * @param player
+     * @return Othello, a simulated board
+     * @throws FileNotFoundException
+     */
     private Othello miniMax(PLAYER player) throws FileNotFoundException {
 
         HashMap<Tile, Othello> possibleMoves = new HashMap<>();             //STORE INSTANCES POSSIBLE MOVES
@@ -467,8 +533,13 @@ public class Othello implements Comparable {
         }
     }
 
+    /**
+     * Simulate performing the move by creating a new board and playing it out
+     * @return
+     * @throws FileNotFoundException
+     */
     private Othello simulateBoard() throws FileNotFoundException {
-        Othello future = new Othello(new Tile[8][8], depth + 1);      /**Simulate performing the move by creating a new board and playing it out **/
+        Othello future = new Othello(new Tile[8][8], depth + 1);
         for (int k = 0; k < 8; k++) {
             for (int l = 0; l < 8; l++) {
                 future.board[k][l] = new Tile(board[k][l].getY(), board[k][l].getX(), board[k][l].getPlayer());
@@ -477,6 +548,10 @@ public class Othello implements Comparable {
         return future;
     }
 
+    /**
+     * Choose the next to best move for the player.
+     * @param player
+     */
     private void makeSecondOptimalMove(PLAYER player) {
         Collections.sort(moves);
         Tile move;
@@ -488,14 +563,12 @@ public class Othello implements Comparable {
         makeMove(board, move.getY(), move.getX(), player);
     }
 
+    /**
+     * Choose the best move for the player.
+     * @param player
+     */
     private void makeOptimalMove(PLAYER player) {
         Collections.sort(moves);
-
-//        if (depth == 0) {
-////            for (Othello move : moves) {
-////                System.out.println("Tile: " + move.lastMove.getX() + "" + move.lastMove.getY() + " Reward: " + move.reward + " Score: " + move.score);
-////            }
-//        }
         if (moves.size() == 0)
             return;
         Tile move;
@@ -504,12 +577,13 @@ public class Othello implements Comparable {
         } else {
             move = moves.get(moves.size() - 1).lastMove;
         }
-//        if (depth == 0)
-//            System.out.println(move.getX() + " " + move.getY());
         makeMove(board, move.getY(), move.getX(), player);
         moves.clear();
     }
 
+    /**
+     * Create the board.
+     */
     private void constructBoard() {
         for (int i = 0; i < 8; i++) {
             for (int j = 0; j < 8; j++) {
@@ -522,6 +596,14 @@ public class Othello implements Comparable {
         }
     }
 
+    /**
+     * Execute a move
+     * @param board
+     * @param y
+     * @param x
+     * @param player
+     */
+
     private void makeMove(Tile[][] board, int y, int x, PLAYER player) {
         if (isValidMove(y, x, player)) {
             board[y][x].setPlayer(player);
@@ -533,6 +615,13 @@ public class Othello implements Comparable {
         }
     }
 
+    /**
+     * Check if a move is valid.
+     * @param y
+     * @param x
+     * @param player
+     * @return
+     */
     private boolean isValidMove(int y, int x, PLAYER player) {
         if (board[y][x].getPlayer() == PLAYER.BLANK) {
             if (checkTile(y - 2, x) == player && checkTile(y - 1, x) == otherPlayer(player))
@@ -556,6 +645,11 @@ public class Othello implements Comparable {
         return false;
     }
 
+    /**
+     * Return the opposite player.
+     * @param player
+     * @return
+     */
     private PLAYER otherPlayer(PLAYER player) {
         if (player == PLAYER.MARKOV)
             return PLAYER.MINIMAX;
@@ -564,6 +658,12 @@ public class Othello implements Comparable {
         return PLAYER.FALSE;
     }
 
+    /**
+     * Check state of a tile.
+     * @param y
+     * @param x
+     * @return
+     */
     private PLAYER checkTile(int y, int x) {
         if (y < 0 || y > 7 || x < 0 || x > 7)
             return PLAYER.FALSE;
@@ -571,6 +671,9 @@ public class Othello implements Comparable {
             return board[y][x].getPlayer();
     }
 
+    /**
+     * Set the score.
+     */
     private void setScore() {
         miniTiles = 0;
         markovTiles = 0;
@@ -592,14 +695,27 @@ public class Othello implements Comparable {
         }
     }
 
+    /**
+     * Return the score.
+     * @return
+     */
     private int getScore() {
         return score;
     }
 
+    /**
+     * Overridden compareTo that enables ordering simulated boards by their reward.
+     * @param o
+     * @return
+     */
     @Override
     public int compareTo(Object o) {
         return (int) (((Othello) o).reward - this.reward);
     }
+
+    /**
+     * Inner Tile class.
+     */
 
     class Tile {
         int x;
