@@ -183,7 +183,7 @@ public class Othello implements Comparable {
         while (!setOver()) {
 
 
-            Thread.sleep(500);
+            //Thread.sleep(500);
             if (turnCounter == 1) {
                 miniMoveStart();
                 turnCounter++;
@@ -413,25 +413,36 @@ public class Othello implements Comparable {
         possibleMoves = 0;
         for (int i = 0; i < 8; i++) {
             for (int j = 0; j < 8; j++) {
-                if (isValidMove(i, j, player)) { /**Proceed if the tile in the current iteration is a viable move **/
+                /**Proceed if the tile in the current iteration is a viable move **/
+                if (isValidMove(i, j, player)) {
                     possibleMoves++;
                     Othello future = simulateBoard();
-                    future.makeMove(future.board, i, j, player); /**Make the move in a simulated board**/
+
+                    /**Make the move in a simulated board**/
+                    future.makeMove(future.board, i, j, player);
                     future.setScore();
-                    future.reward += future.getScore() - getScore(); /**Add the added score to the reward of the simulated game **/
+
+                    /**Add the added score to the reward of the simulated game **/
+                    future.reward += future.getScore() - getScore();
+
+                    /**Add the flat reward for the tile taken**/
                     future.reward += player.equals(PLAYER.MINIMAX) ? (board[i][j].getFlatReward() * flatFactor * -1) : (future.reward += board[i][j].getFlatReward() * flatFactor); /**Add the flat reward for the tile taken**/
 
-                    if (future.setOver()) { /**Set the reward depending on which player we are simulating the move on**/
+                    /**Set the reward depending on which player we are simulating the move on**/
+                    if (future.setOver()) {
                         if (score < 0)
                             future.reward += player.equals(PLAYER.MINIMAX) ? (winReward * -1) : winReward;
                         else if (score > 0)
                             future.reward -= player.equals(PLAYER.MINIMAX) ? (winReward * -1) : winReward;
                     }
 
-                    if (future.hasValidMove(otherPlayer(player)) && depth < foresight) { /**If we want to go deeper**/
+                    /**If we want to go deeper**/
+                    if (future.hasValidMove(otherPlayer(player)) && depth < foresight) {
                         Tile temp = future.lastMove;
                         future.setRewards(otherPlayer(player));
-                        future.reward += player.equals(PLAYER.MINIMAX) ? possibleMoves * opposingMovesReward : possibleMoves * opposingMovesReward * -1; /**Add reward for limiting the other player's options.**/
+
+                        /**Add reward for limiting the other player's options.**/
+                        future.reward += player.equals(PLAYER.MINIMAX) ? possibleMoves * opposingMovesReward : possibleMoves * opposingMovesReward * -1;
                         if (Math.random() * 10 < probability || future.moves.size() < 2)
                             future.makeOptimalMove(otherPlayer(player)); /**Assume that MOST of the time the other player will do an optimal move **/
                         else
@@ -440,7 +451,9 @@ public class Othello implements Comparable {
 
                         future.setRewards(player);
                         if (future.hasValidMove(player))
-                            future.reward += player.equals(PLAYER.MINIMAX) ? future.moves.get(0).reward * discount * -1 : future.moves.get(0).reward * discount; /**The move is worth it's own accumulated value plus future optimal values times a discount value, according to the Markov Decision Process**/
+
+                        /**The move is worth it's own accumulated value plus future optimal values times a discount value, according to the Markov Decision Process**/
+                            future.reward += player.equals(PLAYER.MINIMAX) ? future.moves.get(0).reward * discount * -1 : future.moves.get(0).reward * discount;
                         future.lastMove = temp;
                     }
                     moves.add(future);
