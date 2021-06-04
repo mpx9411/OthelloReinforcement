@@ -513,9 +513,8 @@ public class Othello implements Comparable {
 
 
                         future.setRewards(player);
-                        if (future.hasValidMove(player))
-
                         /**The move is worth it's own accumulated value plus future optimal values times a discount value, according to the Markov Decision Process**/
+                        if (future.hasValidMove(player))
                             future.reward += future.moves.get(0).reward * discount;
                         future.lastMove = temp;
                     }
