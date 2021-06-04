@@ -4,7 +4,7 @@ Magnus Palmstierna, Paulina Kekkonen, Ida Söderberg
 
 grupp 5
 
-GitHub: https://github.com/mpx9411/OthelloReinforcement/tree/magnus 
+GitHub: https://github.com/mpx9411/OthelloReinforcement
 
 I denna uppgift har gruppen utarbetat en tidigare version av Othello. Den tidigare versionen använde sig utav minimax, som motspelare mot en riktig person. I denna version spelar en Q-learning agent mot antingen en minimaxbot eller en bot som gör slumpvalda dragningar. 
 
