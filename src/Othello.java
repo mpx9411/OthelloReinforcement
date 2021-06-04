@@ -1,3 +1,5 @@
+// Magnus Palmstierna, Paulina Kekkonen, Ida Söderberg, Grupp 5
+
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
