@@ -1,71 +1,277 @@
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
+import java.util.Random;
 import java.util.Scanner;
 
-enum Color{
+enum PLAYER {
     BLANK,
-    WHITE, //BOT
-    BLACK, //PLAYER
+    MINIMAX, //BOT
+    MARKOV, //PLAYER
     FALSE
 }
 
-public class Othello {
+public class Othello implements Comparable {
+    static Scanner inFile;
+    String fileName = "src/weights";
+
+    // Used for adjusting weights
+    double preAdjustedWeight;
+    double postAdjustedWeight;
+
+    double probability; //Base probability that opponent does a good move
+    double flatFactor;
+    double discount;
+    double opposingMovesReward;
+
+
+    boolean randomBot; //Boolean that determines if opponent is minimax or a randomizer.
+
+    //FLAT REWARDS
+    int nextToCorner = -20;
+    int corner = 5;
+    int border = 2;
+    int winReward = 100;
+
+    //Amount of steps ahead to check
+    int foresight = 4;
 
     static Scanner input = new Scanner(System.in);
     static HashMap<Tile, Othello> realBotMoves = new HashMap<>();
+    ArrayList<Othello> moves = new ArrayList<>();
     Tile[][] board;
-    int playerScore = 0;
-    int botScore = 0;
+    int miniTiles = 0; //MINIMAX PLAYER +
+    int markovTiles = 0; //REINFORCEMENT PLAYER -
+    int possibleMoves;
     int score = 0;
     int turnCounter = 1;
     int depth;
+    float reward = 0;
     Tile lastMove;
 
-    private Othello(Tile[][] board, int depth){
+    private Othello(Tile[][] board, int depth) throws FileNotFoundException {
         this.board = board;
         this.depth = depth;
     }
 
-    public static void main(String[] args){
+    public static void main(String[] args) throws InterruptedException, FileNotFoundException {
         Othello game = new Othello(new Tile[8][8], 0);
-        System.out.println("Welcome to Othello. Enter the X and Y panel you wish to play.");
-        game.run();
-    }
+        System.out.println("Welcome");
+        game.loadWeights();
+        game.adjustRandomWeight();
+            int noOfGames = 10;
 
-    private void run(){
-        constructBoard();
-        while(!setOver()) {
-            printBoard();
-            if (turnCounter == 1) {
-                botMoveStart();
-                turnCounter++;
-            } else if (turnCounter % 2 == 0) {
-                System.out.println("Player turn");
-                playerMove();
-                turnCounter++;
-            }
-            else if(turnCounter % 2 != 0){
-                System.out.println("Bot turn");
-                botMove();
-                turnCounter++;
-            }
-
-            System.out.println("Score: " + score);
-
+            int wins = game.trainBot(game, noOfGames);
+            System.out.println("\nTotal wins: " + wins);
+            if (wins > noOfGames / 2) {
+                try {
+                    game.writeNewWeightsToFile(); // update weight in file
+                } catch (IOException e) {
+                    // TODO Auto-generated catch block
+                    e.printStackTrace();
+                }
         }
     }
 
-    private void printBoard(){                          //PRINT THE INSTANCE BOARD
+    /**
+     * Train bot through letting it play noOfGames games with its new weights
+     * @param game
+     * @param noOfGames
+     * @return
+     * @throws FileNotFoundException
+     * @throws InterruptedException
+     */
+    private int trainBot(Othello game, int noOfGames) throws FileNotFoundException, InterruptedException {
+        randomBot = Math.random() < 0.5 ? true : false;
+        int won = 0;
+        for (int i = 0; i < noOfGames; i++) {
+
+            System.out.print("Running game no. " + i + " ... ");
+            String winner = game.run();
+            if (winner.equals("markov")) {
+                won++;
+                System.out.println("Won match");
+            } else {
+                System.out.println("Lost match");
+            }
+            Thread.sleep(2000);
+            turnCounter = 1;
+        }
+        return won;
+    }
+
+    /**
+     * Randomize a weight to be adjusted
+     */
+    private void adjustRandomWeight() {
+        Random random = new Random();
+        int weight = random.nextInt(4);
+        double sign = random.nextDouble();
+        String modifier = sign < 0.5 ? String.valueOf(random.nextDouble()) : String.valueOf(random.nextDouble() * -1);
+        switch(weight){
+            case 0:
+                adjustWeight("probability", modifier);
+                break;
+            case 1:
+                adjustWeight("flatFactor", modifier);
+                break;
+            case 2:
+                adjustWeight("discount", modifier);
+                break;
+            case 3:
+                adjustWeight("opposingMovesReward", modifier);
+                break;
+        }
+    }
+
+    /**
+     * Adjust a given weight with a given adjustment factor
+     * @param weight
+     * @param adjustment
+     */
+    private void adjustWeight(String weight, String adjustment) {
+        System.out.println("Adjusting weights");
+
+        switch (weight) {
+            case "probability":
+                preAdjustedWeight = probability;
+                probability =  probability * Double.parseDouble(adjustment);
+                postAdjustedWeight = probability;
+                break;
+            case "flatFactor":
+                preAdjustedWeight = flatFactor;
+                flatFactor = flatFactor * Double.parseDouble(adjustment);
+                postAdjustedWeight = flatFactor;
+                break;
+            case "discount":
+                preAdjustedWeight = discount;
+                discount = discount * Double.parseDouble(adjustment);
+                postAdjustedWeight = discount;
+                break;
+            case "opposingMovesReward":
+                preAdjustedWeight = opposingMovesReward;
+                opposingMovesReward = opposingMovesReward * Double.parseDouble(adjustment);
+                postAdjustedWeight = opposingMovesReward;
+                break;
+            default:
+                System.out.println("No weight exists with the given name.");
+        }
+    }
+
+    /** Write new better weight to file
+     *  code from https://stackoverflow.com/questions/8563294/modifying-existing-file-content-in-java
+     **/
+    private void writeNewWeightsToFile() throws IOException {
+        System.out.println("Saving weights. Searching for " + preAdjustedWeight);
+
+        List<String> newLines = new ArrayList<>();
+        for (String line : Files.readAllLines(Paths.get(fileName), StandardCharsets.UTF_8)) {
+            if (line.contains(Double.toString(preAdjustedWeight))) {
+                newLines.add(line.replace(Double.toString(preAdjustedWeight), "" + Double.toString(postAdjustedWeight)));
+            } else {
+                newLines.add(line);
+            }
+        }
+        Files.write(Paths.get(fileName), newLines, StandardCharsets.UTF_8);
+    }
+
+    /**
+     * Load the weights from the file
+     */
+    private void loadWeights() {
+        try {
+            inFile = new Scanner(new File(fileName));
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        }
+        probability = Double.parseDouble(inFile.nextLine());
+        flatFactor = Double.parseDouble(inFile.nextLine());
+        foresight = Integer.parseInt(inFile.nextLine());
+        discount = Float.parseFloat(inFile.nextLine());
+        opposingMovesReward = Integer.parseInt(inFile.nextLine());
+
+    }
+
+    /**
+     * Runs a game.
+     * @return
+     * @throws InterruptedException
+     * @throws FileNotFoundException
+     */
+    private String run() throws InterruptedException, FileNotFoundException {
+        constructBoard();
+        while (!setOver()) {
+
+
+            Thread.sleep(500);
+            if (turnCounter == 1) {
+                miniMoveStart();
+                turnCounter++;
+            } else if (turnCounter % 2 != 0) {
+//                System.out.println("Mini turn");
+                if (!randomBot)
+                    botMove(PLAYER.MINIMAX);
+                else
+                    makeRandomMove(PLAYER.MINIMAX);
+
+                turnCounter++;
+            } else if (turnCounter % 2 == 0) {
+//                System.out.println("Markov turn");
+                setRewards(PLAYER.MARKOV);
+                makeOptimalMove(PLAYER.MARKOV);
+                turnCounter++;
+            }
+            printBoard();
+//
+            System.out.println("Mini score: " + miniTiles);
+            System.out.println("Markov score: " + markovTiles);
+
+        }
+
+        return (miniTiles > markovTiles ? "mini" : (miniTiles < markovTiles ? "markov" : "tie"));
+    }
+
+    /**
+     * Make a random move
+     * @param player
+     */
+    private void makeRandomMove(PLAYER player) {
+        ArrayList<Tile> moves = new ArrayList<>();
+        for (int i = 0; i < 8; i++) {
+            for (int j = 0; j < 8; j++) {
+                if (isValidMove(i, j, player)) {
+                    moves.add(new Tile(i, j, player));
+                }
+            }
+        }
+        if (moves.isEmpty())
+            return;
+        double random = Math.random() * moves.size();
+        Tile move = moves.get((int) random);
+        makeMove(board, move.getY(), move.getX(), player);
+    }
+
+    /**
+     * Print out the board.
+     */
+    private void printBoard() {                          //PRINT THE INSTANCE BOARD
         System.out.println("Turn " + turnCounter);
         System.out.println("   0  1  2  3  4  5  6  7");
-        for(int i = 0; i < 8; i++){
+        for (int i = 0; i < 8; i++) {
             System.out.print(i + " ");
-            for(int j = 0; j < 8; j++){
-                switch(board[i][j].getColor()) {
-                    case BLACK:
+            for (int j = 0; j < 8; j++) {
+                switch (board[i][j].getPlayer()) {
+                    case MARKOV:
                         System.out.print("[-]");
                         break;
-                    case WHITE:
+                    case MINIMAX:
                         System.out.print("[+]");
                         break;
                     case BLANK:
@@ -78,159 +284,325 @@ public class Othello {
         System.out.println();
     }
 
-    private void flipTiles(int y, int x){               //CHECK IF ANY OCCUPIED TILES ARE BETWEEN TWO TILES OF OTHER COLOR
-        Color tile = board[y][x].getColor();
+    /**
+     * Check for tiles that are to be flipped.
+     * @param y
+     * @param x
+     */
+    private void flipTiles(int y, int x) {               //CHECK IF ANY OCCUPIED TILES ARE BETWEEN TWO TILES OF OTHER PLAYER
+        PLAYER tile = board[y][x].getPlayer();
         Tile toChange;
-        if(checkTile(y+2, x) == tile && checkTile(y+1, x) == otherColor(tile))
-            board[y+1][x].setColor(tile);
-        if(checkTile(y-2, x) == tile && checkTile(y-1, x) == otherColor(tile))
-            board[y-1][x].setColor(tile);
-        if(checkTile(y, x+2) == tile && checkTile(y, x+1) == otherColor(tile))
-            board[y][x+1].setColor(tile);
-        if(checkTile(y, x-2) == tile && checkTile(y, x-1) == otherColor(tile))
-            board[y][x-1].setColor(tile);
-        if(checkTile(y-2, x-2) == tile && checkTile(y-1, x-1) == otherColor(tile))
-            board[y-1][x-1].setColor(tile);
-        if(checkTile(y-2, x+2) == tile && checkTile(y-1, x+1) == otherColor(tile))
-            board[y-1][x+1].setColor(tile);
-        if(checkTile(y+2, x+2) == tile && checkTile(y+1, x+1) == otherColor(tile))
-            board[y+1][x+1].setColor(tile);
-        if(checkTile(y+2, x-2) == tile && checkTile(y+1, x-1) == otherColor(tile))
-            board[y+1][x-1].setColor(tile);
+        if (checkTile(y + 2, x) == tile && checkTile(y + 1, x) == otherPlayer(tile))
+            board[y + 1][x].setPlayer(tile);
+        if (checkTile(y - 2, x) == tile && checkTile(y - 1, x) == otherPlayer(tile))
+            board[y - 1][x].setPlayer(tile);
+        if (checkTile(y, x + 2) == tile && checkTile(y, x + 1) == otherPlayer(tile))
+            board[y][x + 1].setPlayer(tile);
+        if (checkTile(y, x - 2) == tile && checkTile(y, x - 1) == otherPlayer(tile))
+            board[y][x - 1].setPlayer(tile);
+        if (checkTile(y - 2, x - 2) == tile && checkTile(y - 1, x - 1) == otherPlayer(tile))
+            board[y - 1][x - 1].setPlayer(tile);
+        if (checkTile(y - 2, x + 2) == tile && checkTile(y - 1, x + 1) == otherPlayer(tile))
+            board[y - 1][x + 1].setPlayer(tile);
+        if (checkTile(y + 2, x + 2) == tile && checkTile(y + 1, x + 1) == otherPlayer(tile))
+            board[y + 1][x + 1].setPlayer(tile);
+        if (checkTile(y + 2, x - 2) == tile && checkTile(y + 1, x - 1) == otherPlayer(tile))
+            board[y + 1][x - 1].setPlayer(tile);
 
     }
 
-    private void botMoveStart(){                        //SINCE START OF GAME IS PERFECTLY SYMMETRICAL, WE CAN RANDOMIZE THE BOT'S FIRST MOVE IF HE BEGINS
+    /**
+     * Perform starting move for miniMax bot.
+     */
+    private void miniMoveStart() {                        //SINCE START OF GAME IS PERFECTLY SYMMETRICAL, WE CAN RANDOMIZE THE BOT'S FIRST MOVE IF HE BEGINS
         double move = Math.floor(Math.random() * 3);
-        switch((int) move){
+        switch ((int) move) {
             case 0:
-                makeMove(board, 2, 3, Color.WHITE);
+                makeMove(board, 2, 3, PLAYER.MINIMAX);
                 break;
             case 1:
-                makeMove(board, 3, 2, Color.WHITE);
+                makeMove(board, 3, 2, PLAYER.MINIMAX);
                 break;
             case 2:
-                makeMove(board, 4, 5, Color.WHITE);
+                makeMove(board, 4, 5, PLAYER.MINIMAX);
                 break;
             case 3:
-                makeMove(board, 5, 4, Color.WHITE);
+                makeMove(board, 5, 4, PLAYER.MINIMAX);
                 break;
         }
     }
 
-    private void playerMove() {                     //REQUEST PLAYER MOVE
-        Color myColor = Color.BLACK;
-        char[] move;
-        do{
-            move = input.next().toCharArray();
-        }while(move.length != 2);
-        int x = Character.getNumericValue(move[0]);
-        int y = Character.getNumericValue(move[1]);
-        System.out.println("Tile " + x + "" + y);
-        makeMove(board, y, x, myColor);
+    /**
+     * Make a manual move
+     */
+    private void manualMove() {
+        PLAYER myPlayer = PLAYER.MARKOV;
+        if (hasValidMove(myPlayer)) {
+            char[] move;
+            do {
+                move = input.next().toCharArray();
+            } while (move.length != 2 && !isValidMove(move[1], move[0], myPlayer));
+            int x = Character.getNumericValue(move[0]);
+            int y = Character.getNumericValue(move[1]);
+            System.out.println("Tile " + x + "" + y);
+            makeMove(board, y, x, myPlayer);
+        }
     }
 
-    private boolean setOver(){                      //CHECK IF GAME IS OVER
-        for(int i = 0; i < 8; i++){
-            for(int j = 0; j < 8; j++){
-                if (isValidMove(i, j, Color.WHITE))
-                    return false;
-                if (isValidMove(i, j, Color.BLACK))
-                    return false;
+    /**
+     * Check if a move is valid.
+     * @param player
+     * @return
+     */
+    private boolean hasValidMove(PLAYER player) {
+        for (int i = 0; i < 8; i++) {
+            for (int j = 0; j < 8; j++) {
+                if (isValidMove(i, j, player)) {
+                    return true;
                 }
             }
-        return true;
         }
+        return false;
+    }
 
-    private void botMove() {                        //EXECUTE BOT MOVE WITH A CALCULATED LIST OF OPTIMAL MOVES
-        Color myColor = Color.WHITE;
-        miniMax(myColor);
+    /**
+     * Checks if any player has a valid move and can continue the game
+     * @return boolean that says the state of the game
+     */
+    private boolean setOver() {                      //CHECK IF GAME IS OVER
+        for (int i = 0; i < 8; i++) {
+            for (int j = 0; j < 8; j++) {
+                if (isValidMove(i, j, PLAYER.MINIMAX))
+                    return false;
+                if (isValidMove(i, j, PLAYER.MARKOV))
+                    return false;
+            }
+        }
+        return true;
+    }
+
+
+    /**
+     * Make automated move with MiniMax.
+     * @param player
+     * @throws FileNotFoundException
+     */
+    private void botMove(PLAYER player) throws FileNotFoundException {                        //EXECUTE BOT MOVE WITH A CALCULATED LIST OF OPTIMAL MOVES
+        miniMax(player);
         Tile move = null;
-        for(Tile t : realBotMoves.keySet()){
-            if(move == null)
+        for (Tile t : realBotMoves.keySet()) {
+            if (move == null)
                 move = t;
-            else{
-                if(realBotMoves.get(t).getScore() > realBotMoves.get(move).getScore())
+            else {
+                if (realBotMoves.get(t).getScore() > realBotMoves.get(move).getScore())
                     move = t;
             }
         }
-        System.out.println("Tile " + move.getX() + "" + move.getY());
-        makeMove(board, move.getY(), move.getX(), myColor);
-        realBotMoves.clear();
+        if (move != null) {
+            makeMove(board, move.getY(), move.getX(), player);
+            realBotMoves.clear();
+        } else {
+        }
     }
 
-    private int miniMax(Color color){
+    /**
+     * MiniMax algorithm
+     * @param player
+     * @return Othello, a simulated board
+     * @throws FileNotFoundException
+     */
+    private Othello miniMax(PLAYER player) throws FileNotFoundException {
 
         HashMap<Tile, Othello> possibleMoves = new HashMap<>();             //STORE INSTANCES POSSIBLE MOVES
         ArrayList<Othello> optimalMoves = new ArrayList<>();                //STORE OPTIMAL MOVES
 
-        for(int i = 0; i < 8; i++){
-            for(int j = 0; j < 8; j++){
-                if(isValidMove(i, j, color)){
-                    Othello theory = new Othello(new Tile[8][8], depth+1);      //IF A VALID MOVE, CREATE SCENARIO AND INSERT INTO POSSIBLE MOVES
-                    for(int k = 0; k < 8; k++){
-                        for(int l = 0; l < 8; l++){
-                            theory.board[k][l] = new Tile(board[k][l].getY(), board[k][l].getX(), board[k][l].getColor());
-                        }
+        for (int i = 0; i < 8; i++) {
+            for (int j = 0; j < 8; j++) {
+                if (isValidMove(i, j, player)) {
+                    Othello theory = new Othello(new Tile[8][8], depth + 1);//IF A VALID MOVE, CREATE SCENARIO AND INSERT INTO POSSIBLE MOVES
+                    for (int k = 0; k < 8; k++) {
+                        for (int l = 0; l < 8; l++) {
+
+                            theory.board[k][l] = new Tile(board[k][l].getY(), board[k][l].getX(), board[k][l].getPlayer());
+
+                        }//IF A VALID MOVE, CREATE SCENARIO AND INSERT INTO POSSIBLE MOVES
                     }
-                    theory.makeMove(theory.board, i, j, color);
+                    theory.makeMove(theory.board, i, j, player);
                     possibleMoves.put(theory.lastMove, theory);
+
 
                 }
             }
         }
-
-        if(possibleMoves.isEmpty() || depth > 5){ //IF THERE ARE NO MORE MOVES OR IF WE'VE GONE TOO DEEP, RETURN SCORE
-            return getScore();
+        this.possibleMoves = possibleMoves.size();
+        if (possibleMoves.isEmpty() || depth > 5) { //IF THERE ARE NO MORE MOVES OR IF WE'VE GONE TOO DEEP, RETURN SCORE
+            return this;
         }
-        for(Othello t : possibleMoves.values()){
-            if(!t.setOver()) //                     IF WE'RE NOT AT THE END OF THE GAME, CALCULATE THE BEST MOVE FOR THE NEXT TURN, BUT FOR THE OTHER COLOR
-                t.score += t.miniMax(otherColor(color));
-            if(optimalMoves.isEmpty())
+        for (Othello t : possibleMoves.values()) {
+            if (!t.setOver()) //                     IF WE'RE NOT AT THE END OF THE GAME, CALCULATE THE BEST MOVE FOR THE NEXT TURN, BUT FOR THE OTHER PLAYER
+                t.score += t.miniMax(otherPlayer(player)).getScore();
+            if (optimalMoves.isEmpty())
                 optimalMoves.add(t);
-            else
-            if((t.getScore() > optimalMoves.get(0).getScore() && color == Color.WHITE) || (t.getScore() < optimalMoves.get(0).getScore() && color == Color.BLACK)){
+            else if ((t.getScore() > optimalMoves.get(0).getScore() && player == PLAYER.MINIMAX) || (t.getScore() < optimalMoves.get(0).getScore() && player == PLAYER.MARKOV)) {
                 optimalMoves.clear();
                 optimalMoves.add(t);
-            }else if(t.getScore() == optimalMoves.get(0).getScore()){
+            } else if (t.getScore() == optimalMoves.get(0).getScore()) {
                 optimalMoves.add(t);
             }
         }
 
         Othello bestMove = null;
-        for(Othello o : optimalMoves){//CHOOSE WINNING MOVE WITH FEWEST TURNS
-            if(bestMove == null)
+        for (Othello o : optimalMoves) {//CHOOSE WINNING MOVE WITH FEWEST TURNS
+            if (bestMove == null)
                 bestMove = o;
-            if(bestMove == o){
+            if (bestMove == o) {
                 continue;
-            }else{
-                if(bestMove.turnCounter > o.turnCounter)
+            } else {
+                if (bestMove.turnCounter > o.turnCounter)
                     bestMove = o;
+                else if (bestMove.turnCounter == o.turnCounter)
+                    bestMove = Math.random() > 0.5 ? bestMove : o;
             }
         }
 
-        if(depth == 0){                                                     //IF WE'RE IN THE REAL GAME, INSERT POSSIBILITIES INTO A REAL LIST
-            System.out.println("I'M BACK");
+        if (depth == 0) {                                                     //IF WE'RE IN THE REAL GAME, INSERT POSSIBILITIES INTO A REAL LIST
             realBotMoves.put(bestMove.lastMove, bestMove);
         }
-        return bestMove.getScore();
+
+        return this;
     }
 
+    private void setRewards(PLAYER player) throws FileNotFoundException {
+        possibleMoves = 0;
+        for (int i = 0; i < 8; i++) {
+            for (int j = 0; j < 8; j++) {
+                /**Proceed if the tile in the current iteration is a viable move **/
+                if (isValidMove(i, j, player)) {
+                    possibleMoves++;
+                    Othello future = simulateBoard();
+
+                    /**Make the move in a simulated board**/
+                    future.makeMove(future.board, i, j, player);
+                    future.setScore();
+
+                    /**Add the added score to the reward of the simulated game **/
+                    future.reward += future.getScore();
+
+                    /**Add the flat reward for the tile taken**/
+                    future.reward += player.equals(PLAYER.MINIMAX) ? (board[i][j].getFlatReward() * flatFactor * -1) : (future.reward += board[i][j].getFlatReward() * flatFactor);
+
+                    /**Set rewards for game-ending moves**/
+                    if (future.setOver())
+                        future.reward += score > 0 ? winReward : winReward * -1;
+
+                    /**If we want to go deeper**/
+                    if (future.hasValidMove(otherPlayer(player)) && depth < foresight) {
+                        Tile temp = future.lastMove;
+                        future.setRewards(otherPlayer(player));
+
+                        /**Add punishment for the number of options the other player has**/
+                        future.reward += player.equals(PLAYER.MINIMAX) ? possibleMoves * opposingMovesReward : possibleMoves * opposingMovesReward * -1;
+
+                        /**
+                         * Add possibility of less than optimal moves from the other player
+                         */
+                        if (Math.random() * 10 < probability || future.moves.size() < 2)
+                            future.makeOptimalMove(otherPlayer(player)); /**Assume that MOST of the time the other player will do an optimal move **/
+                        else
+                            future.makeSecondOptimalMove(otherPlayer(player));/**Assume that sometimes the other player will do the second best move **/
+
+
+                        future.setRewards(player);
+                        /**The move is worth it's own accumulated value plus future optimal values times a discount value, according to the Markov Decision Process**/
+                        if (future.hasValidMove(player))
+                            future.reward += future.moves.get(0).reward * discount;
+                        future.lastMove = temp;
+                    }
+                    moves.add(future);
+
+
+                }
+
+            }
+
+
+        }
+    }
+
+    /**
+     * Simulate performing the move by creating a new board and playing it out
+     * @return
+     * @throws FileNotFoundException
+     */
+    private Othello simulateBoard() throws FileNotFoundException {
+        Othello future = new Othello(new Tile[8][8], depth + 1);
+        for (int k = 0; k < 8; k++) {
+            for (int l = 0; l < 8; l++) {
+                future.board[k][l] = new Tile(board[k][l].getY(), board[k][l].getX(), board[k][l].getPlayer());
+            }
+        } //Create a board that simulates a move
+        return future;
+    }
+
+    /**
+     * Choose the next to best move for the player.
+     * @param player
+     */
+    private void makeSecondOptimalMove(PLAYER player) {
+        Collections.sort(moves);
+        Tile move;
+        if (player.equals(PLAYER.MARKOV)) {
+            move = moves.get(moves.size() - 2).lastMove;
+        } else {
+            move = moves.get(1).lastMove;
+        }
+        makeMove(board, move.getY(), move.getX(), player);
+    }
+
+    /**
+     * Choose the best move for the player.
+     * @param player
+     */
+    private void makeOptimalMove(PLAYER player) {
+        Collections.sort(moves);
+        if (moves.size() == 0)
+            return;
+        Tile move;
+        if (player.equals(PLAYER.MARKOV)) {
+            move = moves.get(0).lastMove;
+        } else {
+            move = moves.get(moves.size() - 1).lastMove;
+        }
+        makeMove(board, move.getY(), move.getX(), player);
+        moves.clear();
+    }
+
+    /**
+     * Create the board.
+     */
     private void constructBoard() {
-        for(int i = 0; i < 8; i++){
-            for(int j = 0; j < 8; j++){
-                board[i][j] = new Tile(i, j, Color.BLANK);
-                if((i == 3 && j == 3) ||(i == 4 && j == 4))
-                    board[i][j].setColor(Color.BLACK);
-                else if((i == 3 && j == 4) || (i == 4 && j == 3))
-                    board[i][j].setColor(Color.WHITE);
+        for (int i = 0; i < 8; i++) {
+            for (int j = 0; j < 8; j++) {
+                board[i][j] = new Tile(i, j, PLAYER.BLANK);
+                if ((i == 3 && j == 3) || (i == 4 && j == 4))
+                    board[i][j].setPlayer(PLAYER.MARKOV);
+                else if ((i == 3 && j == 4) || (i == 4 && j == 3))
+                    board[i][j].setPlayer(PLAYER.MINIMAX);
             }
         }
     }
 
-    private void makeMove(Tile[][] board, int y, int x, Color color){
-        if(isValidMove(y, x, color)){
-            board[y][x].setColor(color);
+    /**
+     * Execute a move
+     * @param board
+     * @param y
+     * @param x
+     * @param player
+     */
+
+    private void makeMove(Tile[][] board, int y, int x, PLAYER player) {
+        if (isValidMove(y, x, player)) {
+            board[y][x].setPlayer(player);
             setScore();
             lastMove = board[y][x];
             flipTiles(y, x);
@@ -240,111 +612,170 @@ public class Othello {
     }
 
     /**
-     * This method takes the coordinates of a tile on the game board, and determines whether performing a move on
-     * it is viable for the requesting player.
-     * First off, it checks if a player has already put something on this tile by confirming if the tile is of the color
-     * type BLANK. If it isn't, we already know the move isn't possible and can return false. Otherwise, we check for
-     * every direction (vertical, horizontal and diagonally) if one tile away there is a tile of the opposite color
-     * and if two tiles away there is a tile of the same color. If this is true for any of the directions we check,
-     * the move is possible according to the rules and we can return true. If none of these are true, we will end up
-     * at the end of the method and return false.
-     *
-     * A possible error is if our int parameters are not valid tiles on the board. To circumvent this error, we use the
-     * method checkTile() which determines if the tile exists on the board and returns an enum telling us if the
-     * values represent a tile, and in that case, what state it is in.
-     *
-     *
-     * @param  int  Takes two integers representing the coordinates of the tile we want to change
-     * @param  Color The enum representing the state we wish to change the tile to.
-     * @return      a boolean value representing if the move is executable or not
+     * Check if a move is valid.
+     * @param y
+     * @param x
+     * @param player
+     * @return
      */
-
-    private boolean isValidMove(int y, int x, Color color) {
-        if(board[y][x].getColor() == Color.BLANK){
-            if(checkTile(y-2, x) == color && checkTile(y-1, x) == otherColor(color))
+    private boolean isValidMove(int y, int x, PLAYER player) {
+        if (board[y][x].getPlayer() == PLAYER.BLANK) {
+            if (checkTile(y - 2, x) == player && checkTile(y - 1, x) == otherPlayer(player))
                 return true;
-            if(checkTile(y+2, x) == color && checkTile(y+1, x) == otherColor(color))
+            if (checkTile(y + 2, x) == player && checkTile(y + 1, x) == otherPlayer(player))
                 return true;
-            if(checkTile(y, x-2) == color && checkTile(y, x-1) == otherColor(color))
+            if (checkTile(y, x - 2) == player && checkTile(y, x - 1) == otherPlayer(player))
                 return true;
-            if(checkTile(y, x+2) == color && checkTile(y, x+1) == otherColor(color))
+            if (checkTile(y, x + 2) == player && checkTile(y, x + 1) == otherPlayer(player))
                 return true;
-            if(checkTile(y+2, x+2) == color && checkTile(y+1, x+1) == otherColor(color))
+            if (checkTile(y + 2, x + 2) == player && checkTile(y + 1, x + 1) == otherPlayer(player))
                 return true;
-            if(checkTile(y-2, x+2) == color && checkTile(y-1, x+1) == otherColor(color))
+            if (checkTile(y - 2, x + 2) == player && checkTile(y - 1, x + 1) == otherPlayer(player))
                 return true;
-            if(checkTile(y+2, x-2) == color && checkTile(y+1, x-1) == otherColor(color))
+            if (checkTile(y + 2, x - 2) == player && checkTile(y + 1, x - 1) == otherPlayer(player))
                 return true;
-            if(checkTile(y-2, x-2) == color && checkTile(y-1, x-1) == otherColor(color))
+            if (checkTile(y - 2, x - 2) == player && checkTile(y - 1, x - 1) == otherPlayer(player))
                 return true;
 
         }
         return false;
     }
 
-    private Color otherColor(Color color){
-        if(color == Color.BLACK)
-            return Color.WHITE;
-        else if(color == Color.WHITE)
-            return Color.BLACK;
-        return Color.FALSE;
+    /**
+     * Return the opposite player.
+     * @param player
+     * @return
+     */
+    private PLAYER otherPlayer(PLAYER player) {
+        if (player == PLAYER.MARKOV)
+            return PLAYER.MINIMAX;
+        else if (player == PLAYER.MINIMAX)
+            return PLAYER.MARKOV;
+        return PLAYER.FALSE;
     }
 
-    private Color checkTile(int y, int x){
-        if(y < 0 || y > 7 || x < 0 || x > 7)
-            return Color.FALSE;
+    /**
+     * Check state of a tile.
+     * @param y
+     * @param x
+     * @return
+     */
+    private PLAYER checkTile(int y, int x) {
+        if (y < 0 || y > 7 || x < 0 || x > 7)
+            return PLAYER.FALSE;
         else
-            return board[y][x].getColor();
+            return board[y][x].getPlayer();
     }
 
-    private void setScore(){
-        botScore = 0;
-        playerScore = 0;
-        for(int i = 0; i < 8; i++){
-            for(int j = 0; j < 8; j++){
-                switch(checkTile(j, i)){
-                    case BLACK:
-                        playerScore++;
+    /**
+     * Set the score.
+     */
+    private void setScore() {
+        miniTiles = 0;
+        markovTiles = 0;
+        for (int i = 0; i < 8; i++) {
+            for (int j = 0; j < 8; j++) {
+                switch (checkTile(j, i)) {
+                    case MINIMAX:
+                        miniTiles++;
                         break;
-                    case WHITE:
-                        botScore++;
+                    case MARKOV:
+                        markovTiles++;
                         break;
                     case BLANK:
                         break;
                 }
-                score = botScore - playerScore;
+                score = markovTiles - miniTiles;
+
             }
         }
     }
 
-    private int getScore(){
+    /**
+     * Return the score.
+     * @return
+     */
+    private int getScore() {
         return score;
     }
 
-    class Tile{
+    /**
+     * Overridden compareTo that enables ordering simulated boards by their reward.
+     * @param o
+     * @return
+     */
+    @Override
+    public int compareTo(Object o) {
+        return (int) (((Othello) o).reward - this.reward);
+    }
+
+    /**
+     * Inner Tile class.
+     */
+
+    class Tile {
         int x;
         int y;
-        Color color;
+        int flatReward;
+        PLAYER player;
 
-        private Tile(int y, int x, Color color){
-            this.color = color;
+        private Tile(int y, int x, PLAYER player) {
+            this.player = player;
             this.y = y;
             this.x = x;
+            setReward();
         }
 
-        private void setColor(Color color){
-            this.color = color;
+        private void setReward() {
+            if (x == 0 || x == 7) {
+                if (y == 1 || y == 6)
+                    flatReward = nextToCorner;
+                else if (y == 0 || y == 7)
+                    flatReward = corner;
+                else
+                    flatReward = border;
+            } else if (y == 0 || y == 7) {
+                if (x == 1 || x == 6)
+                    flatReward = nextToCorner;
+                else
+                    flatReward = border;
+            }
         }
 
-        private Color getColor(){
-            return color;
+        int getFlatReward() {
+            return flatReward;
         }
 
-        public int getX(){
+        private void setPlayer(PLAYER player) {
+            this.player = player;
+        }
+
+        private PLAYER getPlayer() {
+            return player;
+        }
+
+        public int getX() {
             return x;
         }
-        public int getY(){
+
+        public int getY() {
             return y;
+        }
+
+        @Override
+        public int hashCode() {
+            return (x + 1) * 10 + y + 1;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+
+            if (o == this) return true;
+            if (!(o instanceof Tile)) {
+                return false;
+            }
+            Tile t = (Tile) o;
+            return x == t.x && y == t.y;
         }
     }
 }
